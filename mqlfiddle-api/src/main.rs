@@ -46,7 +46,7 @@ async fn main() -> std::io::Result<()> {
             .service(execute)
             .service(mqltest)
     })
-    .bind("localhost:4000")?
+    .bind("localhost:5000")?
     .run()
     .await
 }
