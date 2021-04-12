@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import axios from "axios";
 
@@ -26,6 +26,20 @@ const data = {
 };
 
 function App() {
+	const [schema, setSchema] = useState<string | undefined>('// put your schema here');
+	const [mql, setMql] = useState<string | undefined>('// put your mql here');
+	const [output, setOutput] = useState<string | undefined>('// output will appear here');
+
+	const onExecute = () => {
+		executeFiddle({
+			schema: JSON.parse(schema!),
+			query: JSON.parse(mql!),
+		}).then(
+			res => setOutput(JSON.stringify(res.data.result))
+		).catch(
+			e => console.error(e)
+		)
+	}
 
 	return (
 		<div className="app">
@@ -33,23 +47,25 @@ function App() {
 				<Editor
 					theme="vs-dark"
 					defaultLanguage="javascript"
-					defaultValue="collection.insertMany({'a': 1}, {'a': 2})"
 					height="50vh"
 					width="50vw"
+					value={schema}
+					onChange={setSchema}
 					options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
 				/>
-				<button onClick={() => executeFiddle(data)}>Execute</button>
+				<button onClick={onExecute}>Execute</button>
 			</div>
 			<Editor
 				className="editor"
 				theme="vs-dark"
 				defaultLanguage="javascript"
-				defaultValue="db.collection.find()"
 				options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
 				height="50vh"
 				width="50vw"
+				value={mql}
+				onChange={setMql}
 			/>
-			<div className="output">Output</div>
+			<div className="output">{output}</div>
 		</div>
 	);
 }
