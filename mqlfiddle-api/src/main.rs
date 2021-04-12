@@ -1,18 +1,25 @@
-use actix_web::{get, post, App, HttpResponse, HttpServer, Responder};
+use actix_web::{middleware::Logger, post, web, App, HttpServer};
+use serde::Serialize;
 
-#[get("/hello")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello, world!")
+#[derive(Serialize)]
+struct ExecuteResponse {
+    result: String,
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+#[post("/execute")]
+async fn execute() -> web::Json<ExecuteResponse> {
+    let res = ExecuteResponse {
+        result: "I am a placeholder for the actual result docs".into(),
+    };
+    web::Json(res)
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| App::new().service(hello).service(echo))
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
+
+    HttpServer::new(|| App::new().wrap(Logger::default()).service(execute))
         .bind("localhost:4000")?
         .run()
         .await
