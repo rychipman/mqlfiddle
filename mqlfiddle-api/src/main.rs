@@ -1,15 +1,25 @@
+use std::collections::HashMap;
+
 use actix_web::{middleware::Logger, post, web, App, HttpServer};
-use mongodb::{options::ClientOptions, Client};
+use bson::Bson;
+use mongodb::Client;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 struct ExecuteResponse {
-    result: String,
+    result: Bson,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 struct ExecuteRequest {
-    mql: String,
+    schema: HashMap<String, Vec<bson::Document>>,
+    query: Query,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+struct Query {
+    collection: String,
+    pipeline: Bson,
 }
 
 async fn listdbs() -> Result<Vec<String>, Box<dyn std::error::Error>> {
@@ -27,10 +37,7 @@ async fn mqltest() -> String {
 #[post("/execute")]
 async fn execute(info: web::Json<ExecuteRequest>) -> web::Json<ExecuteResponse> {
     let res = ExecuteResponse {
-        result: format!(
-            "I am a placeholder for the actual result docs. Your mql input was: {}",
-            info.mql
-        ),
+        result: bson::bson!({"requestBody": bson::to_bson(&info.0).unwrap(), "a": 1, "b": 2}),
     };
     web::Json(res)
 }
