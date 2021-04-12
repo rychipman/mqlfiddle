@@ -11,24 +11,25 @@ const executeFiddle = (data: any) => axios({
 	data: data,
 });
 
-const data = {
-	schema: {
-		foo: [{ a: 1 }, { a: 2 }],
-		bar: [{ b: 1 }, { b: 2 }],
-	},
-	query: {
-		collection: 'foo',
-		pipeline: [
-			{ '$lookup': { 'from': 'foo' } },
-			{ '$addFields': { c: 'abc' } },
-		],
-	},
-};
+const defaultSchema = JSON.stringify({
+	foo: [{ a: 1 }, { a: 2 }],
+	bar: [{ b: 1 }, { b: 2 }],
+}, null, 2);
+
+const defaultMQL = JSON.stringify({
+	collection: 'foo',
+	pipeline: [
+		{ '$lookup': { 'from': 'foo' } },
+		{ '$addFields': { c: 'abc' } },
+	],
+}, null, 2);
+
+const defaultOutput = 'Output';
 
 function App() {
-	const [schema, setSchema] = useState<string | undefined>('// put your schema here');
-	const [mql, setMql] = useState<string | undefined>('// put your mql here');
-	const [output, setOutput] = useState<string | undefined>('// output will appear here');
+	const [schema, setSchema] = useState<string | undefined>(defaultSchema);
+	const [mql, setMql] = useState<string | undefined>(defaultMQL);
+	const [output, setOutput] = useState<string | undefined>(defaultOutput);
 
 	const onExecute = () => {
 		executeFiddle({
