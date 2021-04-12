@@ -13,7 +13,7 @@ async fn echo(req_body: String) -> impl Responder {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| App::new().service(hello).service(echo))
-        .bind("localhost:8080")?
+        .bind("localhost:3000")?
         .run()
         .await
 }
