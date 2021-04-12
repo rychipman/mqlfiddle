@@ -4,6 +4,7 @@ use actix_web::{middleware::Logger, post, web, App, HttpServer};
 use bson::Document;
 use futures::stream::StreamExt;
 use mongodb::Client;
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -28,7 +29,13 @@ async fn execute(
     info: web::Json<ExecuteRequest>,
     mongo: web::Data<Client>,
 ) -> web::Json<ExecuteResponse> {
-    let db = mongo.database("blahdb");
+    let dbname: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(30)
+        .map(char::from)
+        .collect();
+
+    let db = mongo.database(&dbname);
 
     for (col, docs) in info.schema.iter() {
         db.collection(col)
