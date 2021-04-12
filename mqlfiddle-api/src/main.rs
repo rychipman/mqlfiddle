@@ -48,6 +48,8 @@ async fn execute(
         docs.push(doc.unwrap())
     }
 
+    db.drop(None).await.unwrap();
+
     let res = ExecuteResponse { result: docs };
     web::Json(res)
 }
