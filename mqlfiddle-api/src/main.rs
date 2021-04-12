@@ -1,44 +1,54 @@
 use std::collections::HashMap;
 
 use actix_web::{middleware::Logger, post, web, App, HttpServer};
-use bson::Bson;
+use bson::Document;
+use futures::stream::StreamExt;
 use mongodb::Client;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 struct ExecuteResponse {
-    result: Bson,
+    result: Vec<Document>,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 struct ExecuteRequest {
-    schema: HashMap<String, Vec<bson::Document>>,
+    schema: HashMap<String, Vec<Document>>,
     query: Query,
 }
 
 #[derive(Deserialize, Serialize, Clone)]
 struct Query {
     collection: String,
-    pipeline: Bson,
-}
-
-async fn listdbs() -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let client = Client::with_uri_str("mongodb://localhost:27017").await?;
-    let dbs = client.list_database_names(None, None).await?;
-    Ok(dbs)
-}
-
-#[post("/mqltest")]
-async fn mqltest() -> String {
-    let dbs = listdbs().await.unwrap();
-    dbs.join(", ")
+    pipeline: Vec<Document>,
 }
 
 #[post("/execute")]
-async fn execute(info: web::Json<ExecuteRequest>) -> web::Json<ExecuteResponse> {
-    let res = ExecuteResponse {
-        result: bson::bson!({"requestBody": bson::to_bson(&info.0).unwrap(), "a": 1, "b": 2}),
-    };
+async fn execute(
+    info: web::Json<ExecuteRequest>,
+    mongo: web::Data<Client>,
+) -> web::Json<ExecuteResponse> {
+    let db = mongo.database("blahdb");
+
+    for (col, docs) in info.schema.iter() {
+        db.collection(col)
+            .insert_many(docs.clone(), None)
+            .await
+            .expect("failed to insert docs");
+    }
+
+    let mut cursor = db
+        .collection(&info.query.collection)
+        .aggregate(info.query.pipeline.clone(), None)
+        .await
+        .unwrap();
+
+    let mut docs = Vec::new();
+    while let Some(doc) = cursor.next().await {
+        docs.push(doc.unwrap())
+    }
+
+    let res = ExecuteResponse { result: docs };
     web::Json(res)
 }
 
@@ -47,11 +57,15 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    HttpServer::new(|| {
+    let client = Client::with_uri_str("mongodb://localhost:27017")
+        .await
+        .unwrap();
+
+    HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .service(execute)
-            .service(mqltest)
+            .data(client.clone())
     })
     .bind("localhost:5000")?
     .run()

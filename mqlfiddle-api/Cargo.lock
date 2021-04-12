@@ -1344,6 +1344,7 @@ dependencies = [
  "actix-web",
  "bson",
  "env_logger",
+ "futures",
  "mongodb",
  "serde",
  "serde_json",

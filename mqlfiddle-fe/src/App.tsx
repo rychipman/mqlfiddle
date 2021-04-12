@@ -19,7 +19,7 @@ const defaultSchema = JSON.stringify({
 const defaultMQL = JSON.stringify({
 	collection: 'foo',
 	pipeline: [
-		{ '$lookup': { 'from': 'foo' } },
+		{ '$lookup': { 'from': 'bar', 'as': 'bar', 'pipeline': [] } },
 		{ '$addFields': { c: 'abc' } },
 	],
 }, null, 2);
