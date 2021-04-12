@@ -1,0 +1,13 @@
+.app {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0px 0px;
+  grid-template-areas:
+    "schema schema editor editor"
+    "output output output output";
+    align-items: start;
+}
+.schema { grid-area: schema;}
+.editor { grid-area: editor;}
+.output { grid-area: output; font-family: 'Robot Mono', monospace; font-size: 22px;}
