@@ -51,18 +51,18 @@ const Layout = () => {
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
   const [mql, setMql] = useState<string | undefined>(defaultMQL);
   const [output, setOutput] = useState<string | undefined>(undefined);
-  const { fiddleId } = useParams<{ fiddleId?: string }>();
+  const { code } = useParams<{ code?: string }>();
 
   useEffect(() => {
-    if (fiddleId) {
-      loadFiddle(fiddleId)
+    if (code) {
+      loadFiddle(code)
         .then(({ data }) => {
           setSchema(data.schema);
           setMql(data.query);
         })
         .catch((e) => console.error(e));
     }
-  }, [fiddleId]);
+  }, [code]);
 
   const onExecute = () => {
     executeFiddle({
@@ -78,7 +78,13 @@ const Layout = () => {
       schema: schema!,
       query: mql!,
     })
-      .then((res) => alert(res.data.code))
+      .then((res) => {
+        const saveUrl = window.location + res.data.code;
+        navigator.clipboard.writeText(saveUrl);
+        setOutput(
+          `Unique url for this fiddle: ${saveUrl} (already copied to clipboard)`
+        );
+      })
       .catch((e) => console.error(e));
   };
 

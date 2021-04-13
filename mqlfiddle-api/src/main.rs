@@ -12,6 +12,14 @@ use serde::{Deserialize, Serialize};
 const SAVE_DB: &str = "fiddleback";
 const SAVE_COL: &str = "spider";
 
+const DEFAULT_SCHEMA: &str = "{\n  \"foo\": [\n    {\n      \"a\": 1\n    },\n    {\n      \"a\": \
+                              2\n    }\n  ],\n  \"bar\": [\n    {\n      \"b\": 1\n    },\n    \
+                              {\n      \"b\": 2\n    }\n  ]\n}";
+const DEFAULT_QUERY: &str = "{\n  \"collection\": \"foo\",\n  \"pipeline\": [\n    {\n      \
+                             \"$lookup\": {\n        \"from\": \"bar\",\n        \"as\": \
+                             \"bar\",\n        \"pipeline\": []\n      }\n    },\n    {\n      \
+                             \"$addFields\": {\n        \"c\": \"abc\"\n      }\n    }\n  ]\n}";
+
 #[derive(Serialize)]
 struct ExecuteResponse {
     result: Vec<Document>,
@@ -83,8 +91,8 @@ async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<Sa
     };
 
     web::Json(SaveData {
-        query: "".into(),
-        schema: "".into(),
+        query: DEFAULT_QUERY.into(),
+        schema: DEFAULT_SCHEMA.into(),
     })
 }
 

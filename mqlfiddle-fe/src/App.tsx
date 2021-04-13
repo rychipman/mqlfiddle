@@ -1,3 +1,4 @@
+import React from "react";
 import {
   BrowserRouter as Router,
   Switch,
@@ -11,9 +12,7 @@ function App() {
   return (
     <Router>
       <Switch>
-        <Route exact path={["/", "/:fiddleId"]}>
-          <Layout />
-        </Route>
+        <Route exact path={["/", "/:code"]} children={<Layout />} />
         <Redirect to="/" />
       </Switch>
     </Router>
