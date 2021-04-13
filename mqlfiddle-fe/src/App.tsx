@@ -5,70 +5,94 @@ import axios from "axios";
 import Editor from "@monaco-editor/react";
 import "./App.css";
 
-const executeFiddle = (data: any) => axios({
-	method: 'post',
-	url: '/execute',
-	data: data,
-});
+const executeFiddle = (data: any) =>
+  axios({
+    method: "post",
+    url: "/execute",
+    data: data,
+  });
 
-const defaultSchema = JSON.stringify({
-	foo: [{ a: 1 }, { a: 2 }],
-	bar: [{ b: 1 }, { b: 2 }],
-}, null, 2);
+const saveFiddle = (data: any) =>
+  axios({
+    method: "post",
+    url: "/save",
+    data,
+  });
 
-const defaultMQL = JSON.stringify({
-	collection: 'foo',
-	pipeline: [
-		{ '$lookup': { 'from': 'bar', 'as': 'bar', 'pipeline': [] } },
-		{ '$addFields': { c: 'abc' } },
-	],
-}, null, 2);
+const defaultSchema = JSON.stringify(
+  {
+    foo: [{ a: 1 }, { a: 2 }],
+    bar: [{ b: 1 }, { b: 2 }],
+  },
+  null,
+  2
+);
 
-const defaultOutput = 'Output';
+const defaultMQL = JSON.stringify(
+  {
+    collection: "foo",
+    pipeline: [
+      { $lookup: { from: "bar", as: "bar", pipeline: [] } },
+      { $addFields: { c: "abc" } },
+    ],
+  },
+  null,
+  2
+);
+
+const defaultOutput = "Output";
 
 function App() {
-	const [schema, setSchema] = useState<string | undefined>(defaultSchema);
-	const [mql, setMql] = useState<string | undefined>(defaultMQL);
-	const [output, setOutput] = useState<string | undefined>(defaultOutput);
+  const [schema, setSchema] = useState<string | undefined>(defaultSchema);
+  const [mql, setMql] = useState<string | undefined>(defaultMQL);
+  const [output, setOutput] = useState<string | undefined>(defaultOutput);
 
-	const onExecute = () => {
-		executeFiddle({
-			schema: JSON.parse(schema!),
-			query: JSON.parse(mql!),
-		}).then(
-			res => setOutput(JSON.stringify(res.data.result))
-		).catch(
-			e => console.error(e)
-		)
-	}
+  const onExecute = () => {
+    executeFiddle({
+      schema: JSON.parse(schema!),
+      query: JSON.parse(mql!),
+    })
+      .then((res) => setOutput(JSON.stringify(res.data.result)))
+      .catch((e) => console.error(e));
+  };
 
-	return (
-		<div className="app">
-			<div className="schema">
-				<Editor
-					theme="vs-dark"
-					defaultLanguage="javascript"
-					height="50vh"
-					width="50vw"
-					value={schema}
-					onChange={setSchema}
-					options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
-				/>
-				<button onClick={onExecute}>Execute</button>
-			</div>
-			<Editor
-				className="editor"
-				theme="vs-dark"
-				defaultLanguage="javascript"
-				options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
-				height="50vh"
-				width="50vw"
-				value={mql}
-				onChange={setMql}
-			/>
-			<div className="output">{output}</div>
-		</div>
-	);
+  const onSave = () => {
+    saveFiddle({
+      schema: schema!,
+      query: mql!,
+    })
+      .then((res) => setOutput(JSON.stringify(res.data.result)))
+      .catch((e) => console.error(e));
+  };
+
+  return (
+    <div className="app">
+      <div className="schema">
+        <Editor
+          theme="vs-dark"
+          defaultLanguage="javascript"
+          height="50vh"
+          width="50vw"
+          value={schema}
+          onChange={setSchema}
+          options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
+        />
+        <button onClick={onExecute}>Execute</button>
+        <button onClick={onSave}>Save</button>
+      </div>
+      <Editor
+        className="editor"
+        theme="vs-dark"
+        defaultLanguage="javascript"
+        options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
+        height="50vh"
+        width="50vw"
+        value={mql}
+        onChange={setMql}
+      />
+      <div className="output">{output}</div>
+    </div>
+  );
 }
 
 export default App;
