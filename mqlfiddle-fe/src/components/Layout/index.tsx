@@ -80,7 +80,7 @@ const Layout = () => {
       query: mql!,
     })
       .then((res) => {
-        const saveUrl = window.location + res.data.code;
+        const saveUrl = `${window.location.protocol}//${window.location.host}/${res.data.code}`;
         navigator.clipboard.writeText(saveUrl);
         setOutput(
           `Unique url for this fiddle: ${saveUrl} (already copied to clipboard)`
