@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 import Navbar from "./Navbar";
 import Editor from "../Editor";
 
 import "./style.css";
+import { useParams } from "react-router";
 
 const executeFiddle = (data: any) =>
   axios({
@@ -18,6 +19,12 @@ const saveFiddle = (data: any) =>
     method: "post",
     url: "/save",
     data,
+  });
+
+const loadFiddle = (fiddleId: string) =>
+  axios({
+    method: "get",
+    url: `/${fiddleId}`,
   });
 
 const defaultSchema = JSON.stringify(
@@ -47,6 +54,18 @@ const Layout = () => {
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
   const [mql, setMql] = useState<string | undefined>(defaultMQL);
   const [output, setOutput] = useState<string | undefined>(defaultOutput);
+  const { fiddleId } = useParams<{ fiddleId?: string }>();
+
+  useEffect(() => {
+    if (fiddleId) {
+      loadFiddle(fiddleId)
+        .then(({ data }) => {
+          setSchema(data.schema);
+          setMql(data.query);
+        })
+        .catch((e) => console.error(e));
+    }
+  }, [fiddleId]);
 
   const onExecute = () => {
     executeFiddle({
@@ -62,7 +81,7 @@ const Layout = () => {
       schema: schema!,
       query: mql!,
     })
-      .then((res) => setOutput(JSON.stringify(res.data.result)))
+      .then((res) => alert(res.data.code))
       .catch((e) => console.error(e));
   };
 
