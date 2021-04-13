@@ -1,6 +1,11 @@
-import React, { useState } from "react";
-import ReactDOM from "react-dom";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  useParams,
+} from "react-router-dom";
 
 import Editor from "@monaco-editor/react";
 import "./App.css";
@@ -43,9 +48,32 @@ const defaultMQL = JSON.stringify(
 const defaultOutput = "Output";
 
 function App() {
+  return (
+    <Router>
+      <Switch>
+        <Route exact path="/" children={<Fiddle />} />
+        <Route path="/:code" children={<Fiddle />} />
+      </Switch>
+    </Router>
+  );
+}
+
+function Fiddle() {
+  const { code } = useParams<{ code: string }>();
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
   const [mql, setMql] = useState<string | undefined>(defaultMQL);
   const [output, setOutput] = useState<string | undefined>(defaultOutput);
+
+  useEffect(() => {
+    if (code !== undefined) {
+      (async () => {
+        let response = await axios({ method: "get", url: `/${code}` });
+        let { schema, query } = response.data;
+        setSchema(schema);
+        setMql(query);
+      })();
+    }
+  });
 
   const onExecute = () => {
     executeFiddle({
@@ -61,7 +89,15 @@ function App() {
       schema: schema!,
       query: mql!,
     })
-      .then((res) => setOutput(JSON.stringify(res.data.result)))
+      .then((res) => {
+        const saveUrl = window.location + res.data.code;
+        navigator.clipboard.writeText(saveUrl);
+        setOutput(
+          JSON.stringify(
+            `Unique url for this fiddle: ${saveUrl} (already copied to clipboard)`
+          )
+        );
+      })
       .catch((e) => console.error(e));
   };
 
