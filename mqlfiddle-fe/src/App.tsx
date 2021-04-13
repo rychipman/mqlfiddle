@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-import Editor from "@monaco-editor/react";
+import Editor from "./components/Editor";
 
 const executeFiddle = (data: any) =>
   axios({
@@ -52,22 +52,10 @@ function App() {
       <button onClick={onExecute}>Execute</button>
       <div className="w-full h-3/5 flex space-x-2">
         <div className="w-1/2">
-          <Editor
-            theme="vs-dark"
-            defaultLanguage="javascript"
-            value={schema}
-            onChange={setSchema}
-            options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
-          />
+          <Editor data={schema} setData={setSchema} />
         </div>
         <div className="w-1/2">
-          <Editor
-            theme="vs-dark"
-            defaultLanguage="javascript"
-            options={{ fontFamily: "Roboto Mono, monospace", fontSize: "20px" }}
-            value={mql}
-            onChange={setMql}
-          />
+          <Editor data={mql} setData={setMql} />
         </div>
       </div>
       <div className="w-full h-2/5 font-mono text-lg">{output}</div>
