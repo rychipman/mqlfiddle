@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import isEmpty from "is-empty";
 import Navbar from "./Navbar";
 import Editor from "../Editor";
 
@@ -88,9 +89,27 @@ const Layout = () => {
       .catch((e) => console.error(e));
   };
 
+  const onReset = () => {
+    setMql(undefined);
+    setSchema(undefined);
+    if (output !== undefined) setOutput(undefined);
+  };
+
+  const onLoadTemplate = () => {
+    setMql(defaultMQL);
+    setSchema(defaultSchema);
+    if (output !== undefined) setOutput(undefined);
+  };
+
   return (
     <div className="h-full w-full">
-      <Navbar onExecute={onExecute} onSave={onSave} />
+      <Navbar
+        onExecute={onExecute}
+        onSave={onSave}
+        onReset={onReset}
+        onLoadTemplate={onLoadTemplate}
+        isBlank={isEmpty(mql) && isEmpty(schema)}
+      />
       <div className="w-full flex flex-col content-container">
         <div className="w-full h-3/5 flex">
           <div className="w-1/2 h-full py-1.5">

@@ -9,9 +9,18 @@ import LoadDialog from "../LoadDialog";
 interface NavbarProps {
   onSave: () => void;
   onExecute: () => void;
+  onReset: () => void;
+  onLoadTemplate: () => void;
+  isBlank: boolean;
 }
 
-const Navbar = ({ onSave, onExecute }: NavbarProps) => {
+const Navbar = ({
+  onSave,
+  onExecute,
+  onReset,
+  onLoadTemplate,
+  isBlank,
+}: NavbarProps) => {
   const [loadOpen, setLoadOpen] = useState<boolean>(false);
   const [fiddleId, setFiddleId] = useState<string>("");
   const history = useHistory();
@@ -39,9 +48,16 @@ const Navbar = ({ onSave, onExecute }: NavbarProps) => {
           <H2 className="font-black text-primary">MQL FIDDLE</H2>
         </div>
         <div className="flex items-center space-x-2">
+          {isBlank ? (
+            <Button onClick={onLoadTemplate}>Template</Button>
+          ) : (
+            <Button onClick={onReset}>Reset</Button>
+          )}
           <Button onClick={onLoad}>Load</Button>
-          <Button onClick={onSave}>Save</Button>
-          <Button onClick={onExecute} variant="primary">
+          <Button onClick={onSave} disabled={isBlank}>
+            Save
+          </Button>
+          <Button onClick={onExecute} variant="primary" disabled={isBlank}>
             Execute
           </Button>
         </div>
