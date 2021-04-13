@@ -1,13 +1,12 @@
-use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 
-use actix_web::{middleware::Logger, post, web, App, HttpServer};
+use actix_web::{get, middleware::Logger, post, web, App, HttpServer};
 use bson::{doc, Document};
+use crypto::digest::Digest;
 use futures::stream::StreamExt;
 use mongodb::{options::UpdateOptions, Client};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
-use std::hash::{Hash, Hasher};
 
 // http://entoweb.okstate.edu/ddd/insects/brownrecluse.htm
 const SAVE_DB: &str = "fiddleback";
@@ -30,8 +29,8 @@ struct Query {
     pipeline: Vec<Document>,
 }
 
-#[derive(Serialize, Deserialize, Hash)]
-struct SaveRequest {
+#[derive(Debug, Serialize, Deserialize)]
+struct SaveData {
     schema: String,
     query: String,
 }
@@ -41,16 +40,17 @@ struct SaveResponse {
     code: String,
 }
 
-fn get_hash<T: Hash>(t: &T) -> String {
-    let mut s = DefaultHasher::new();
-    t.hash(&mut s);
-    s.finish().to_string()
+fn get_hash(sd: &SaveData) -> String {
+    let mut hasher = crypto::sha1::Sha1::new();
+    hasher.input_str(&sd.query);
+    hasher.input_str(&sd.schema);
+    hasher.result_str()
 }
 
 #[post("/save")]
-async fn save(info: web::Json<SaveRequest>, mongo: web::Data<Client>) -> web::Json<SaveResponse> {
+async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<SaveResponse> {
     let db = mongo.database(SAVE_DB);
-    let col = db.collection(SAVE_COL);
+    let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
     let code = get_hash(&info.0);
 
@@ -63,6 +63,29 @@ async fn save(info: web::Json<SaveRequest>, mongo: web::Data<Client>) -> web::Js
     .expect("failed to save");
 
     web::Json(SaveResponse { code })
+}
+
+#[get("/{hash}")]
+async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<SaveData> {
+    let db = mongo.database(SAVE_DB);
+    let col = db.collection_with_type::<SaveData>(SAVE_COL);
+
+    let doc = col
+        .find_one(doc! {"code": path.into_inner()}, None)
+        .await
+        .expect("couldn't query MongoDB");
+
+    if let Some(doc) = doc {
+        return web::Json(SaveData {
+            query: doc.query,
+            schema: doc.schema,
+        });
+    };
+
+    web::Json(SaveData {
+        query: "".into(),
+        schema: "".into(),
+    })
 }
 
 #[post("/execute")]
@@ -116,6 +139,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .service(execute)
             .service(save)
+            .service(load)
             .data(client.clone())
     })
     .bind("localhost:5000")?
