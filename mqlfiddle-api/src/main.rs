@@ -56,7 +56,10 @@ fn get_hash(sd: &SaveData) -> String {
 }
 
 #[post("/save")]
-async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<SaveResponse> {
+async fn save(
+    info: web::Json<SaveData>,
+    mongo: web::Data<Client>,
+) -> web::Json<SaveResponse> {
     let db = mongo.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
@@ -74,7 +77,10 @@ async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<
 }
 
 #[get("/{hash}")]
-async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<SaveData> {
+async fn load(
+    path: web::Path<String>,
+    mongo: web::Data<Client>,
+) -> web::Json<SaveData> {
     let db = mongo.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
@@ -133,14 +139,38 @@ async fn execute(
     web::Json(res)
 }
 
+#[derive(Clone)]
+struct MongoClients {
+    threesix: Client,
+    fourzero: Client,
+    fourtwo: Client,
+    fourfour: Client,
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let client = Client::with_uri_str("mongodb://localhost:27017")
+    let threesix = Client::with_uri_str("mongodb://localhost:27017")
         .await
         .unwrap();
+    let fourzero = Client::with_uri_str("mongodb://localhost:27017")
+        .await
+        .unwrap();
+    let fourtwo = Client::with_uri_str("mongodb://localhost:27017")
+        .await
+        .unwrap();
+    let fourfour = Client::with_uri_str("mongodb://localhost:27017")
+        .await
+        .unwrap();
+
+    let mongo_clients = MongoClients {
+        threesix: threesix.clone(),
+        fourzero: fourzero.clone(),
+        fourtwo: fourtwo.clone(),
+        fourfour: fourfour.clone(),
+    };
 
     HttpServer::new(move || {
         App::new()
@@ -148,7 +178,7 @@ async fn main() -> std::io::Result<()> {
             .service(execute)
             .service(save)
             .service(load)
-            .data(client.clone())
+            .data(mongo_clients.clone())
     })
     .bind("localhost:5000")?
     .run()
