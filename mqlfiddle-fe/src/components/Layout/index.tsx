@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-
 import Navbar from "./Navbar";
 import Editor from "../Editor";
 
@@ -48,12 +47,10 @@ const defaultMQL = JSON.stringify(
   2
 );
 
-const defaultOutput = "Output";
-
 const Layout = () => {
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
   const [mql, setMql] = useState<string | undefined>(defaultMQL);
-  const [output, setOutput] = useState<string | undefined>(defaultOutput);
+  const [output, setOutput] = useState<string | undefined>(undefined);
   const { fiddleId } = useParams<{ fiddleId?: string }>();
 
   useEffect(() => {
@@ -88,16 +85,29 @@ const Layout = () => {
   return (
     <div className="h-full w-full">
       <Navbar onExecute={onExecute} onSave={onSave} />
-      <div className="w-full flex flex-col space-y-2 content-container">
-        <div className="w-full h-3/5 flex space-x-2">
-          <div className="w-1/2">
-            <Editor data={schema} setData={setSchema} />
+      <div className="w-full flex flex-col content-container">
+        <div className="w-full h-3/5 flex">
+          <div className="w-1/2 h-full py-1.5">
+            <Editor
+              data={schema}
+              setData={setSchema}
+              title="Data"
+              defaultLanguage="json"
+            />
           </div>
-          <div className="w-1/2">
-            <Editor data={mql} setData={setMql} />
+          <div className="border-r border-gray-light h-full" />
+          <div className="w-1/2 h-full py-1.5">
+            <Editor
+              data={mql}
+              setData={setMql}
+              title="MQL"
+              defaultLanguage="json"
+            />
           </div>
         </div>
-        <div className="w-full h-2/5 font-mono text-lg">{output}</div>
+        <div className="w-full h-2/5 font-mono text-lg border-t border-gray-light p-4">
+          {output || "Execute to see output"}
+        </div>
       </div>
     </div>
   );
