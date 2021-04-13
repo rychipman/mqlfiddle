@@ -150,7 +150,7 @@ async fn main() -> std::io::Result<()> {
             .service(load)
             .data(client.clone())
     })
-    .bind("localhost:5000")?
+    .bind("0.0.0.0:5000")?
     .run()
     .await
 }
