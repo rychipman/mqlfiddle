@@ -143,16 +143,20 @@ async fn main() -> std::io::Result<()> {
         .await
         .unwrap();
 
+    let addr = std::env::var("MQLFIDDLE_API_ADDR").unwrap_or("0.0.0.0:5000".to_string());
+    let static_file_dir =
+        std::env::var("MQLFIDDLE_STATIC_FILE_DIR").unwrap_or("../mqlfiddle-fe/build".to_string());
+
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .service(execute)
             .service(save)
             .service(load)
-            .service(Files::new("/", "./web"))
+            .service(Files::new("/", &static_file_dir))
             .data(client.clone())
     })
-    .bind("0.0.0.0:8080")?
+    .bind(addr)?
     .run()
     .await
 }
