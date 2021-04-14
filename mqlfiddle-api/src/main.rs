@@ -92,7 +92,10 @@ async fn save(
 }
 
 #[get("/api/fiddle/{hash}")]
-async fn load(path: web::Path<String>, mongo: web::Data<MongoClients>) -> web::Json<SaveData> {
+async fn load(
+    path: web::Path<String>,
+    mongo: web::Data<MongoClients>,
+) -> web::Json<SaveData> {
     let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
@@ -184,14 +187,16 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let three_six_uri =
-        std::env::var("MDB_THREE_SIX").unwrap_or("mongodb://localhost:27017".into());
-    let four_zero_uri =
-        std::env::var("MDB_FOUR_ZERO").unwrap_or("mongodb://localhost:27017".into());
-    let four_two_uri = std::env::var("MDB_FOUR_TWO").unwrap_or("mongodb://localhost:27017".into());
-    let four_four_uri =
-        std::env::var("MDB_FOUR_FOUR").unwrap_or("mongodb://localhost:27017".into());
-    let api_db_uri = std::env::var("MDB_API_URI").unwrap_or("mongodb://localhost:27017".into());
+    let three_six_uri = std::env::var("MDB_THREE_SIX")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let four_zero_uri = std::env::var("MDB_FOUR_ZERO")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let four_two_uri = std::env::var("MDB_FOUR_TWO")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let four_four_uri = std::env::var("MDB_FOUR_FOUR")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let api_db_uri = std::env::var("MDB_API_URI")
+        .unwrap_or("mongodb://localhost:27017".into());
 
     let three_six = Client::with_uri_str(&three_six_uri).await.unwrap();
     let four_zero = Client::with_uri_str(&four_zero_uri).await.unwrap();
@@ -207,9 +212,10 @@ async fn main() -> std::io::Result<()> {
         api_client,
     };
 
-    let addr = std::env::var("MQLFIDDLE_API_ADDR").unwrap_or("0.0.0.0:5000".to_string());
-    let static_file_dir =
-        std::env::var("MQLFIDDLE_STATIC_FILE_DIR").unwrap_or("../mqlfiddle-fe/build".to_string());
+    let addr = std::env::var("MQLFIDDLE_API_ADDR")
+        .unwrap_or("0.0.0.0:5000".to_string());
+    let static_file_dir = std::env::var("MQLFIDDLE_STATIC_FILE_DIR")
+        .unwrap_or("../mqlfiddle-fe/build".to_string());
 
     HttpServer::new(move || {
         App::new()
@@ -219,6 +225,7 @@ async fn main() -> std::io::Result<()> {
             .service(load)
             .service(Files::new("/", &static_file_dir).index_file("index.html"))
             .data(mongo_clients.clone())
+            .route("/", web::get().to(|| web::HttpResponse::Ok().body("/")))
     })
     .bind(addr)?
     .run()
