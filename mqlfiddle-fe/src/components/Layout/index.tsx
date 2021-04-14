@@ -72,6 +72,7 @@ const Layout = () => {
         .then(({ data }) => {
           setSchema(data.schema);
           setMql(data.query);
+          setVersion(data.version);
         })
         .catch((e) => console.error(e));
     }
@@ -81,6 +82,7 @@ const Layout = () => {
     executeFiddle({
       schema: JSON.parse(schema!),
       query: JSON.parse(mql!),
+      version,
     })
       .then((res) => {
         setOutput(JSON.stringify(res.data.result));
@@ -93,6 +95,7 @@ const Layout = () => {
     saveFiddle({
       schema: schema!,
       query: mql!,
+      version,
     })
       .then((res) => {
         const saveUrl = `${window.location.protocol}//${window.location.host}/${res.data.code}`;

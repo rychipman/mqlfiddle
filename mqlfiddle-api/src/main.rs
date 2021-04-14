@@ -19,19 +19,22 @@ const DEFAULT_QUERY: &str = "{\n  \"collection\": \"foo\",\n  \"pipeline\": [\n 
                              \"$lookup\": {\n        \"from\": \"bar\",\n        \"as\": \
                              \"bar\",\n        \"pipeline\": []\n      }\n    },\n    {\n      \
                              \"$addFields\": {\n        \"c\": \"abc\"\n      }\n    }\n  ]\n}";
+const DEFAULT_VERSION: &str = "4.4";
 
 #[derive(Serialize)]
 struct ExecuteResponse {
     result: Vec<Document>,
+    execution_stats: Document,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 struct ExecuteRequest {
     schema: HashMap<String, Vec<Document>>,
     query: Query,
+    version: String,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 struct Query {
     collection: String,
     pipeline: Vec<Document>,
@@ -41,6 +44,7 @@ struct Query {
 struct SaveData {
     schema: String,
     query: String,
+    version: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -50,21 +54,34 @@ struct SaveResponse {
 
 fn get_hash(sd: &SaveData) -> String {
     let mut hasher = crypto::sha1::Sha1::new();
-    hasher.input_str(&sd.query);
-    hasher.input_str(&sd.schema);
+    let input_str = String::from(&sd.query) + &sd.schema + &sd.version;
+    hasher.input_str(&input_str);
     hasher.result_str()
 }
 
+fn get_client<'a>(version: &str, clients: &'a MongoClients) -> &'a Client {
+    match version {
+        "3.6" => &clients.three_six,
+        "4.0" => &clients.four_zero,
+        "4.2" => &clients.four_two,
+        "4.4" => &clients.four_four,
+        _ => &clients.four_four,
+    }
+}
+
 #[post("/save")]
-async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<SaveResponse> {
-    let db = mongo.database(SAVE_DB);
+async fn save(
+    info: web::Json<SaveData>,
+    mongo: web::Data<MongoClients>,
+) -> web::Json<SaveResponse> {
+    let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
     let code = get_hash(&info.0);
 
     col.update_one(
         doc! { "code": &code },
-        doc! { "$set": doc! { "query": &info.query, "schema": &info.schema}},
+        doc! { "$set": doc! { "query": &info.query, "schema": &info.schema, "version": &info.version}},
         UpdateOptions::builder().upsert(true).build(),
     )
     .await
@@ -74,8 +91,11 @@ async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<
 }
 
 #[get("/{hash}")]
-async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<SaveData> {
-    let db = mongo.database(SAVE_DB);
+async fn load(
+    path: web::Path<String>,
+    mongo: web::Data<MongoClients>,
+) -> web::Json<SaveData> {
+    let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
     let doc = col
@@ -87,19 +107,21 @@ async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<Sa
         return web::Json(SaveData {
             query: doc.query,
             schema: doc.schema,
+            version: doc.version,
         });
     };
 
     web::Json(SaveData {
         query: DEFAULT_QUERY.into(),
         schema: DEFAULT_SCHEMA.into(),
+        version: DEFAULT_VERSION.into(),
     })
 }
 
 #[post("/execute")]
 async fn execute(
     info: web::Json<ExecuteRequest>,
-    mongo: web::Data<Client>,
+    mongo: web::Data<MongoClients>,
 ) -> web::Json<ExecuteResponse> {
     let dbname: String = thread_rng()
         .sample_iter(&Alphanumeric)
@@ -107,7 +129,10 @@ async fn execute(
         .map(char::from)
         .collect();
 
-    let db = mongo.database(&dbname);
+    let client = get_client(&info.version, &mongo);
+
+    let db = client.database(&dbname);
+    let col = info.schema.iter().nth(0).unwrap().0;
 
     for (col, docs) in info.schema.iter() {
         db.collection(col)
@@ -127,10 +152,33 @@ async fn execute(
         docs.push(doc.unwrap())
     }
 
+    let explain_doc = doc! {
+        "explain": doc! {
+            "aggregate": &col,
+            "pipeline": &info.query.pipeline,
+            "cursor": doc! {}
+        },
+        "verbosity": "executionStats"
+    };
+
+    let execution_stats = db.run_command(explain_doc, None).await.unwrap();
+
     db.drop(None).await.unwrap();
 
-    let res = ExecuteResponse { result: docs };
+    let res = ExecuteResponse {
+        result: docs,
+        execution_stats,
+    };
     web::Json(res)
+}
+
+#[derive(Clone)]
+struct MongoClients {
+    three_six: Client,
+    four_zero: Client,
+    four_two: Client,
+    four_four: Client,
+    api_client: Client,
 }
 
 #[actix_web::main]
@@ -138,9 +186,30 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let client = Client::with_uri_str("mongodb://localhost:27017")
-        .await
-        .unwrap();
+    let three_six_uri = std::env::var("MDB_THREE_SIX")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let four_zero_uri = std::env::var("MDB_FOUR_ZERO")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let four_two_uri = std::env::var("MDB_FOUR_TWO")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let four_four_uri = std::env::var("MDB_FOUR_FOUR")
+        .unwrap_or("mongodb://localhost:27017".into());
+    let api_db_uri = std::env::var("MDB_API_URI")
+        .unwrap_or("mongodb://localhost:27017".into());
+
+    let three_six = Client::with_uri_str(&three_six_uri).await.unwrap();
+    let four_zero = Client::with_uri_str(&four_zero_uri).await.unwrap();
+    let four_two = Client::with_uri_str(&four_two_uri).await.unwrap();
+    let four_four = Client::with_uri_str(&four_four_uri).await.unwrap();
+    let api_client = Client::with_uri_str(&api_db_uri).await.unwrap();
+
+    let mongo_clients = MongoClients {
+        three_six,
+        four_zero,
+        four_two,
+        four_four,
+        api_client,
+    };
 
     HttpServer::new(move || {
         App::new()
@@ -148,7 +217,7 @@ async fn main() -> std::io::Result<()> {
             .service(execute)
             .service(save)
             .service(load)
-            .data(client.clone())
+            .data(mongo_clients.clone())
     })
     .bind("0.0.0.0:5000")?
     .run()
