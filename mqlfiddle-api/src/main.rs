@@ -133,6 +133,11 @@ async fn execute(
     web::Json(res)
 }
 
+#[get("/")]
+async fn index() -> String {
+    "Welcome to MQLFiddle!".into()
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
@@ -148,9 +153,10 @@ async fn main() -> std::io::Result<()> {
             .service(execute)
             .service(save)
             .service(load)
+            .service(index)
             .data(client.clone())
     })
-    .bind("0.0.0.0:5000")?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }

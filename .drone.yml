@@ -9,6 +9,11 @@ trigger:
   - docker
 
 steps:
+- name: test-dockerfile-available
+  image: golang
+  commands:
+    - 'ls -la'
+
 - name: publish
   image: plugins/ecr
   settings:
