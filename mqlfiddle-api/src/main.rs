@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use actix_files::Files;
 use actix_web::{get, middleware::Logger, post, web, App, HttpServer};
 use bson::{doc, Document};
 use crypto::digest::Digest;
@@ -55,7 +56,7 @@ fn get_hash(sd: &SaveData) -> String {
     hasher.result_str()
 }
 
-#[post("/save")]
+#[post("/api/save")]
 async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<SaveResponse> {
     let db = mongo.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
@@ -73,7 +74,7 @@ async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<
     web::Json(SaveResponse { code })
 }
 
-#[get("/{hash}")]
+#[get("/api/{hash}")]
 async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<SaveData> {
     let db = mongo.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
@@ -96,7 +97,7 @@ async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<Sa
     })
 }
 
-#[post("/execute")]
+#[post("/api/execute")]
 async fn execute(
     info: web::Json<ExecuteRequest>,
     mongo: web::Data<Client>,
@@ -133,11 +134,6 @@ async fn execute(
     web::Json(res)
 }
 
-#[get("/")]
-async fn index() -> String {
-    "Welcome to MQLFiddle!".into()
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
@@ -153,7 +149,7 @@ async fn main() -> std::io::Result<()> {
             .service(execute)
             .service(save)
             .service(load)
-            .service(index)
+            .service(Files::new("/", "./web"))
             .data(client.clone())
     })
     .bind("0.0.0.0:8080")?
