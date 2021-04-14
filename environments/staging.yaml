@@ -1,0 +1,2 @@
+envSecrets:
+  TEST_SECRET: my-secrets
