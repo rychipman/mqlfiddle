@@ -2,6 +2,7 @@ import React from "react";
 import { Option, Select, Size } from "@leafygreen-ui/select";
 
 import { VERSIONS } from "../../constants";
+import { useTheme } from "../../hooks/useTheme";
 
 interface VersionToggleProps {
   currentVersion: string;
@@ -12,6 +13,8 @@ const VersionToggle = ({
   currentVersion,
   onVersionChange,
 }: VersionToggleProps) => {
+  const { dark } = useTheme();
+
   return (
     <div className="w-40">
       <Select
@@ -22,6 +25,7 @@ const VersionToggle = ({
         size={Size.Default}
         value={currentVersion}
         onChange={(newVersion) => onVersionChange(newVersion)}
+        darkMode={dark}
       >
         {VERSIONS.map((version) => (
           <Option key={`version-option-${version.value}`} value={version.value}>

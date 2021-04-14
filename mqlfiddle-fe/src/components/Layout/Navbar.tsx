@@ -87,7 +87,7 @@ const Navbar = ({
 
   return (
     <>
-      <div className="w-screen h-16 border-b border-gray-light flex items-center justify-between px-5">
+      <div className="w-screen h-16 border-b border-gray-light dark:border-gray-dark flex items-center justify-between px-5">
         <div className="flex space-x-5 items-center flex-none">
           <LogoMark />
           <H2 className="font-black text-primary">MQL FIDDLE</H2>

@@ -3,11 +3,13 @@ import axios from "axios";
 import isEmpty from "is-empty";
 
 import { useToasts } from "../../hooks/useToast";
+
 import { VERSIONS } from "../../constants";
 
 import Navbar from "./Navbar";
 import Editor from "../Editor";
 import Output from "../Output";
+import ThemeToggle from "../ThemeToggle";
 
 import "./style.css";
 import { useParams } from "react-router";
@@ -129,7 +131,7 @@ const Layout = () => {
   };
 
   return (
-    <div className="h-full w-full">
+    <div className="relative h-full w-full dark:bg-black">
       <Navbar
         onExecute={onExecute}
         onSave={onSave}
@@ -151,7 +153,7 @@ const Layout = () => {
               defaultLanguage="json"
             />
           </div>
-          <div className="border-r border-gray-light h-full" />
+          <div className="border-r border-gray-light dark:border-gray-dark h-full" />
           <div className="w-1/2 h-full py-1.5">
             <Editor
               data={mql}
@@ -163,6 +165,7 @@ const Layout = () => {
         </div>
         <Output output={output} />
       </div>
+      <ThemeToggle />
     </div>
   );
 };
