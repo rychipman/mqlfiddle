@@ -153,7 +153,7 @@ async fn main() -> std::io::Result<()> {
             .service(execute)
             .service(save)
             .service(load)
-            .service(Files::new("/", &static_file_dir))
+            .service(Files::new("/", &static_file_dir).index_file("index.html"))
             .data(client.clone())
     })
     .bind(addr)?
