@@ -16,16 +16,25 @@ const SAVE_COL: &str = "spider";
 const DEFAULT_SCHEMA: &str = "{\n  \"foo\": [\n    {\n      \"a\": 1\n    },\n    {\n      \"a\": \
                               2\n    }\n  ],\n  \"bar\": [\n    {\n      \"b\": 1\n    },\n    \
                               {\n      \"b\": 2\n    }\n  ]\n}";
-const DEFAULT_QUERY: &str = "{\n  \"collection\": \"foo\",\n  \"pipeline\": [\n    {\n      \
-                             \"$lookup\": {\n        \"from\": \"bar\",\n        \"as\": \
-                             \"bar\",\n        \"pipeline\": []\n      }\n    },\n    {\n      \
-                             \"$addFields\": {\n        \"c\": \"abc\"\n      }\n    }\n  ]\n}";
+const DEFAULT_QUERY: &str =
+    "{\n  \"collection\": \"foo\",\n  \"query\": {\n    \"pipeline\": [\n      {\n        \
+     \"$lookup\": {\n          \"from\": \"bar\",\n          \"as\": \"bar\",\n          \
+     \"pipeline\": []\n        }\n      },\n      {\n        \"$addFields\": {\n          \"c\": \
+     \"abc\"\n        }\n      }\n    ]\n  }\n}";
 const DEFAULT_VERSION: &str = "4.4";
 
 #[derive(Serialize)]
 struct ExecuteResponse {
     result: Vec<Document>,
     execution_stats: Document,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+enum QueryOperation {
+    #[serde(rename = "pipeline")]
+    Aggregation(Vec<Document>),
+    #[serde(rename = "filter")]
+    Find(Document),
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -38,7 +47,8 @@ struct ExecuteRequest {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 struct Query {
     collection: String,
-    pipeline: Vec<Document>,
+    #[serde(rename = "query")]
+    operation: QueryOperation,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -139,32 +149,59 @@ async fn execute(
             .expect("failed to insert docs");
     }
 
-    let mut cursor = db
-        .collection(&info.query.collection)
-        .aggregate(info.query.pipeline.clone(), None)
-        .await
-        .unwrap();
+    let mut result = vec![];
+    let execution_stats;
 
-    let mut docs = Vec::new();
-    while let Some(doc) = cursor.next().await {
-        docs.push(doc.unwrap())
+    match &info.query.operation {
+        QueryOperation::Aggregation(pipeline) => {
+            let mut cursor = db
+                .collection(&info.query.collection)
+                .aggregate(pipeline.clone(), None)
+                .await
+                .unwrap();
+
+            while let Some(doc) = cursor.next().await {
+                result.push(doc.unwrap())
+            }
+
+            let explain_doc = doc! {
+                "explain": doc! {
+                    "aggregate": &col,
+                    "pipeline": pipeline,
+                    "cursor": doc! {}
+                },
+                "verbosity": "executionStats"
+            };
+
+            execution_stats = db.run_command(explain_doc, None).await.unwrap();
+        }
+        QueryOperation::Find(filter) => {
+            let mut cursor = db
+                .collection(&info.query.collection)
+                .find(filter.clone(), None)
+                .await
+                .unwrap();
+
+            while let Some(doc) = cursor.next().await {
+                result.push(doc.unwrap())
+            }
+
+            let explain_doc = doc! {
+                "explain": doc! {
+                    "find": &col,
+                    "filter": filter,
+                },
+                "verbosity": "executionStats"
+            };
+
+            execution_stats = db.run_command(explain_doc, None).await.unwrap();
+        }
     }
-
-    let explain_doc = doc! {
-        "explain": doc! {
-            "aggregate": &col,
-            "pipeline": &info.query.pipeline,
-            "cursor": doc! {}
-        },
-        "verbosity": "executionStats"
-    };
-
-    let execution_stats = db.run_command(explain_doc, None).await.unwrap();
 
     db.drop(None).await.unwrap();
 
     let res = ExecuteResponse {
-        result: docs,
+        result,
         execution_stats,
     };
     web::Json(res)

@@ -16,44 +16,46 @@ import { useParams } from "react-router";
 import clsx from "clsx";
 
 const executeFiddle = (data: any) =>
-	axios({
-		method: "post",
-		url: "/api/execute",
-		data: data,
-	});
+  axios({
+    method: "post",
+    url: "/api/execute",
+    data: data,
+  });
 
 const saveFiddle = (data: any) =>
-	axios({
-		method: "post",
-		url: "/api/save",
-		data,
-	});
+  axios({
+    method: "post",
+    url: "/api/save",
+    data,
+  });
 
 const loadFiddle = (fiddleId: string) =>
-	axios({
-		method: "get",
-		url: `/api/fiddle/${fiddleId}`,
-	});
+  axios({
+    method: "get",
+    url: `/api/fiddle/${fiddleId}`,
+  });
 
 const defaultSchema = JSON.stringify(
-	{
-		foo: [{ a: 1 }, { a: 2 }],
-		bar: [{ b: 1 }, { b: 2 }],
-	},
-	null,
-	2
+  {
+    foo: [{ a: 1 }, { a: 2 }],
+    bar: [{ b: 1 }, { b: 2 }],
+  },
+  null,
+  2
 );
 
 const defaultMQL = JSON.stringify(
-	{
-		collection: "foo",
-		pipeline: [
-			{ $lookup: { from: "bar", as: "bar", pipeline: [] } },
-			{ $addFields: { c: "abc" } },
-		],
-	},
-	null,
-	2
+  {
+    collection: "foo",
+    query: {
+      pipeline: [
+        { $lookup: { from: "bar", as: "bar", pipeline: [] } },
+        { $addFields: { c: "abc" } },
+      ],
+    },
+  },
+  null,
+  2
 );
 
 const defaultVersion = VERSIONS[VERSIONS.length - 1].value;
