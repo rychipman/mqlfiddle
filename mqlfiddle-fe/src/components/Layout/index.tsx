@@ -7,9 +7,11 @@ import { VERSIONS } from "../../constants";
 
 import Navbar from "./Navbar";
 import Editor from "../Editor";
+import Output from "../Output";
 
 import "./style.css";
 import { useParams } from "react-router";
+import clsx from "clsx";
 
 const executeFiddle = (data: any) =>
   axios({
@@ -138,7 +140,9 @@ const Layout = () => {
         onVersionChange={onVersionChange}
       />
       <div className="w-full flex flex-col content-container">
-        <div className="w-full h-3/5 flex">
+        <div
+          className={clsx("w-full flex flex-none", output ? "h-3/5" : "h-full")}
+        >
           <div className="w-1/2 h-full py-1.5">
             <Editor
               data={schema}
@@ -157,9 +161,7 @@ const Layout = () => {
             />
           </div>
         </div>
-        <div className="w-full h-2/5 font-mono text-lg border-t border-gray-light p-4">
-          {output || "Execute to see output"}
-        </div>
+        <Output output={output} />
       </div>
     </div>
   );

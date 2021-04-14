@@ -17,12 +17,12 @@ const Editor = ({
 }: SchemaEditorProps) => {
   return (
     <div className="h-full w-full space-y-1 flex flex-col">
-      <Subtitle className="flex-none font-mono text-center">{title}</Subtitle>
+      <Subtitle className="font-mono text-center">{title}</Subtitle>
       <MEditor
         defaultLanguage={defaultLanguage}
         value={data}
         onChange={setData}
-        className="flex-grow bg-black"
+        height="95%"
         options={{
           fontFamily: "Roboto Mono, monospace",
           fontSize: "18px",
@@ -35,6 +35,7 @@ const Editor = ({
           formatOnType: true,
           hideCursorInOverviewRuler: true,
           overviewRulerBorder: false,
+          indentWidth: 4,
         }}
       />
     </div>
