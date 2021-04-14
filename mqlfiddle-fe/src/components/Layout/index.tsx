@@ -8,7 +8,7 @@ import { VERSIONS } from "../../constants";
 
 import Navbar from "./Navbar";
 import Editor from "../Editor";
-import Output from "../Output";
+import Output, { OutputProps } from "../Output";
 import ThemeToggle from "../ThemeToggle";
 
 import "./style.css";
@@ -63,7 +63,7 @@ const defaultVersion = VERSIONS[VERSIONS.length - 1].value;
 const Layout = () => {
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
   const [mql, setMql] = useState<string | undefined>(defaultMQL);
-  const [output, setOutput] = useState<string | undefined>(undefined);
+  const [output, setOutput] = useState<OutputProps | undefined>(undefined);
   const [version, setVersion] = useState(defaultVersion);
   const { code } = useParams<{ code?: string }>();
   const { addToast } = useToasts();
@@ -87,7 +87,17 @@ const Layout = () => {
       version,
     })
       .then((res) => {
-        setOutput(JSON.stringify(res.data.result));
+        const censoredStats = JSON.parse(
+          JSON.stringify(res.data.execution_stats)
+        );
+        // Clean sensitive data
+        delete censoredStats["serverInfo"]["host"];
+        delete censoredStats["serverInfo"]["port"];
+
+        setOutput({
+          results: JSON.parse(JSON.stringify(res.data.result)),
+          stats: censoredStats,
+        });
         addToast("success", "Fiddle Executed", "Trace through the output");
       })
       .catch((e) => console.error(e));
@@ -168,7 +178,7 @@ const Layout = () => {
             />
           </div>
         </div>
-        <Output output={output} />
+        <Output results={output?.results} stats={output?.stats} />
       </div>
       <ThemeToggle />
     </div>

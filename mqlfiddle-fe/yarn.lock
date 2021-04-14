@@ -1518,6 +1518,14 @@
     "@leafygreen-ui/emotion" "^3.0.1"
     "@leafygreen-ui/lib" "^7.0.0"
 
+"@leafygreen-ui/badge@^4.0.3":
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/@leafygreen-ui/badge/-/badge-4.0.3.tgz#0e5e63740a18cce3700513685c6b92827ff7d4c5"
+  integrity sha512-CAEavAfcM8G6TaFW6LLQ+YGXa8ODxxjtu06uCxg61MjSZJQ7FvGVlvVfd2T6Mz9A6Jm6ZDmW8JpqHrjau/DDkQ==
+  dependencies:
+    "@leafygreen-ui/lib" "^7.0.0"
+    "@leafygreen-ui/palette" "^3.2.1"
+
 "@leafygreen-ui/box@^3.0.4":
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/@leafygreen-ui/box/-/box-3.0.4.tgz#b63fe5a140f9089ecc0178c47c0a6d46b9774e0b"
