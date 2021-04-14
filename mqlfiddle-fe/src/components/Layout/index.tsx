@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import isEmpty from "is-empty";
+
+import { useToasts } from "../../hooks/useToast";
 import Navbar from "./Navbar";
 import Editor from "../Editor";
 
@@ -53,6 +55,7 @@ const Layout = () => {
   const [mql, setMql] = useState<string | undefined>(defaultMQL);
   const [output, setOutput] = useState<string | undefined>(undefined);
   const { code } = useParams<{ code?: string }>();
+  const { addToast } = useToasts();
 
   useEffect(() => {
     if (code) {
@@ -60,6 +63,11 @@ const Layout = () => {
         .then(({ data }) => {
           setSchema(data.schema);
           setMql(data.query);
+          addToast(
+            "success",
+            "Fiddle Loaded",
+            "The saved fiddle has successfully loaded!"
+          );
         })
         .catch((e) => console.error(e));
     }
@@ -70,7 +78,10 @@ const Layout = () => {
       schema: JSON.parse(schema!),
       query: JSON.parse(mql!),
     })
-      .then((res) => setOutput(JSON.stringify(res.data.result)))
+      .then((res) => {
+        setOutput(JSON.stringify(res.data.result));
+        addToast("success", "Fiddle Executed", "Trace through the output");
+      })
       .catch((e) => console.error(e));
   };
 
@@ -82,8 +93,10 @@ const Layout = () => {
       .then((res) => {
         const saveUrl = `${window.location.protocol}//${window.location.host}/${res.data.code}`;
         navigator.clipboard.writeText(saveUrl);
-        setOutput(
-          `Unique url for this fiddle: ${saveUrl} (already copied to clipboard)`
+        addToast(
+          "success",
+          "Fiddle Saved",
+          "Unique URL has been copied to clipboard"
         );
       })
       .catch((e) => console.error(e));
@@ -93,12 +106,14 @@ const Layout = () => {
     setMql(undefined);
     setSchema(undefined);
     if (output !== undefined) setOutput(undefined);
+    addToast("info", "Fiddle Reset", "Be Free!!");
   };
 
   const onLoadTemplate = () => {
     setMql(defaultMQL);
     setSchema(defaultSchema);
     if (output !== undefined) setOutput(undefined);
+    addToast("info", "Fiddle Template Loaded", "Have Fun!!");
   };
 
   return (

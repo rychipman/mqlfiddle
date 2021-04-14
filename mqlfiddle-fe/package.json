@@ -10,6 +10,7 @@
     "@leafygreen-ui/logo": "^5.0.0",
     "@leafygreen-ui/palette": "^3.2.1",
     "@leafygreen-ui/text-input": "^5.0.11",
+    "@leafygreen-ui/toast": "^0.4.5",
     "@leafygreen-ui/typography": "^7.6.0",
     "@monaco-editor/react": "^4.1.1",
     "@testing-library/jest-dom": "^5.11.4",
@@ -22,6 +23,7 @@
     "@types/react-dom": "^17.0.0",
     "@types/react-router-dom": "^5.1.7",
     "axios": "^0.21.1",
+    "clsx": "^1.1.1",
     "husky": "^6.0.0",
     "is-empty": "^1.2.0",
     "prettier": "^2.2.1",
@@ -29,6 +31,7 @@
     "react-dom": "^17.0.2",
     "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.3",
+    "react-toast-notifications": "^2.4.3",
     "typescript": "^4.1.2",
     "web-vitals": "^1.0.1"
   },
