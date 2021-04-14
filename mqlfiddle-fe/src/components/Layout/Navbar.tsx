@@ -5,6 +5,7 @@ import { LogoMark } from "@leafygreen-ui/logo";
 import { H2 } from "@leafygreen-ui/typography";
 
 import LoadDialog from "../LoadDialog";
+import VersionToggle from "../VersionToggle";
 
 interface NavbarProps {
   onSave: () => void;
@@ -12,6 +13,8 @@ interface NavbarProps {
   onReset: () => void;
   onLoadTemplate: () => void;
   isBlank: boolean;
+  version: string;
+  onVersionChange: (newVersion: string) => void;
 }
 
 const Navbar = ({
@@ -20,6 +23,8 @@ const Navbar = ({
   onReset,
   onLoadTemplate,
   isBlank,
+  version,
+  onVersionChange,
 }: NavbarProps) => {
   const [loadOpen, setLoadOpen] = useState<boolean>(false);
   const [fiddleId, setFiddleId] = useState<string>("");
@@ -43,11 +48,15 @@ const Navbar = ({
   return (
     <>
       <div className="w-screen h-16 border-b border-gray-light flex items-center justify-between px-5">
-        <div className="flex space-x-5 items-center">
+        <div className="flex space-x-5 items-center flex-none">
           <LogoMark />
           <H2 className="font-black text-primary">MQL FIDDLE</H2>
+          <VersionToggle
+            currentVersion={version}
+            onVersionChange={onVersionChange}
+          />
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-grow justify-end">
           {isBlank ? (
             <Button onClick={onLoadTemplate}>Template</Button>
           ) : (

@@ -3,6 +3,8 @@ import axios from "axios";
 import isEmpty from "is-empty";
 
 import { useToasts } from "../../hooks/useToast";
+import { VERSIONS } from "../../constants";
+
 import Navbar from "./Navbar";
 import Editor from "../Editor";
 
@@ -50,10 +52,13 @@ const defaultMQL = JSON.stringify(
   2
 );
 
+const defaultVersion = VERSIONS[VERSIONS.length - 1].value;
+
 const Layout = () => {
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
   const [mql, setMql] = useState<string | undefined>(defaultMQL);
   const [output, setOutput] = useState<string | undefined>(undefined);
+  const [version, setVersion] = useState(defaultVersion);
   const { code } = useParams<{ code?: string }>();
   const { addToast } = useToasts();
 
@@ -116,6 +121,16 @@ const Layout = () => {
     addToast("info", "Fiddle Template Loaded", "Have Fun!!");
   };
 
+  const onVersionChange = (newVersion: string) => {
+    const _newVersion = isEmpty(newVersion) ? defaultVersion : newVersion;
+    setVersion(_newVersion);
+    addToast(
+      "success",
+      "Fiddle Version",
+      `MongoDB v${_newVersion} is active now`
+    );
+  };
+
   return (
     <div className="h-full w-full">
       <Navbar
@@ -124,6 +139,8 @@ const Layout = () => {
         onReset={onReset}
         onLoadTemplate={onLoadTemplate}
         isBlank={isEmpty(mql) && isEmpty(schema)}
+        version={version}
+        onVersionChange={onVersionChange}
       />
       <div className="w-full flex flex-col content-container">
         <div className="w-full h-3/5 flex">

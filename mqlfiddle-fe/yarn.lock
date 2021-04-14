@@ -1558,7 +1558,7 @@
     create-emotion-server "10.0.27"
     emotion "^10.0.7"
 
-"@leafygreen-ui/hooks@^6.0.0":
+"@leafygreen-ui/hooks@^6.0.0", "@leafygreen-ui/hooks@^6.0.1":
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/@leafygreen-ui/hooks/-/hooks-6.0.1.tgz#9123052438e8fa5837d6043fd229b80f4a517e5a"
   integrity sha512-u0Egx2IWGK4LNMsEbB49atD7MMv20Z6TuY0iGwtjwDMfSbaN5yLG4hvok7qG7kyHNUFbLlN2Yz15rk7/mPvcHQ==
@@ -1635,6 +1635,17 @@
   resolved "https://registry.yarnpkg.com/@leafygreen-ui/palette/-/palette-3.2.1.tgz#f6171062f24918c66a7c4ad54fc0e3d67399a70c"
   integrity sha512-E7gAN6eEWqsNIQrySABesXckJDJMLnzr3Z0BDQOBEmUdnYzXefvBY1e/zhHE6jb4rxwiOWnzwi1Zb2me50nOmQ==
 
+"@leafygreen-ui/popover@^7.1.4":
+  version "7.1.4"
+  resolved "https://registry.yarnpkg.com/@leafygreen-ui/popover/-/popover-7.1.4.tgz#788589104b3bc8c2d8099ac86886a11c37bc9aa7"
+  integrity sha512-22v0D/j5ecuFzibFHMPwNjIt1tPiAr7VQku0YqW1Or2FMsz0oPb/4cPlA/KclERLxlRLts3FFaLEpNDkNkrlrQ==
+  dependencies:
+    "@leafygreen-ui/hooks" "^6.0.1"
+    "@leafygreen-ui/lib" "^7.0.0"
+    "@leafygreen-ui/portal" "^3.1.1"
+    lodash "^4.17.21"
+    react-transition-group "^4.4.1"
+
 "@leafygreen-ui/portal@^3.1.1":
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/@leafygreen-ui/portal/-/portal-3.1.1.tgz#b2973ac487c186f90d49961267def86dbaaf066a"
@@ -1649,6 +1660,23 @@
   dependencies:
     "@leafygreen-ui/palette" "^3.2.1"
     polished "^4.1.1"
+
+"@leafygreen-ui/select@^2.0.4":
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/@leafygreen-ui/select/-/select-2.0.4.tgz#5cc53014aa2894cb3e9e25e1aef109abefda9e77"
+  integrity sha512-9ZeRWoFRFG4D6xZoh8iWl7qpPM9yxBzeyO8+tvfjzp8nDUYrSHnm09qmyTlT0Eumj/lbv7rIizwiRCEZufIhaQ==
+  dependencies:
+    "@leafygreen-ui/button" "^11.0.2"
+    "@leafygreen-ui/emotion" "^3.0.1"
+    "@leafygreen-ui/hooks" "^6.0.0"
+    "@leafygreen-ui/icon" "^10.2.1"
+    "@leafygreen-ui/lib" "^7.0.0"
+    "@leafygreen-ui/palette" "^3.2.1"
+    "@leafygreen-ui/popover" "^7.1.4"
+    "@leafygreen-ui/tokens" "0.5.1"
+    "@types/react-is" "^17.0.0"
+    polished "^4.0.3"
+    react-is "^17.0.1"
 
 "@leafygreen-ui/text-input@^5.0.11":
   version "5.0.11"
@@ -1676,7 +1704,7 @@
     lodash "^4.17.21"
     react-transition-group "^4.4.1"
 
-"@leafygreen-ui/tokens@^0.5.1":
+"@leafygreen-ui/tokens@0.5.1", "@leafygreen-ui/tokens@^0.5.1":
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/@leafygreen-ui/tokens/-/tokens-0.5.1.tgz#efaaea7bc437fa351de1123d87541b195040c6a0"
   integrity sha512-ggfkuG7TEGoRjve1qGpWlvLpIRqcMjdpjwd9KqwOL/JFdnyIuxvVnCwC4tnUqncszWCOBtsdeqJ6ZkuU3BIMtA==
@@ -2154,6 +2182,13 @@
   version "17.0.3"
   resolved "https://registry.yarnpkg.com/@types/react-dom/-/react-dom-17.0.3.tgz#7fdf37b8af9d6d40127137865bb3fff8871d7ee1"
   integrity sha512-4NnJbCeWE+8YBzupn/YrJxZ8VnjcJq5iR1laqQ1vkpQgBiA7bwk0Rp24fxsdNinzJY2U+HHS4dJJDPdoMjdJ7w==
+  dependencies:
+    "@types/react" "*"
+
+"@types/react-is@^17.0.0":
+  version "17.0.0"
+  resolved "https://registry.yarnpkg.com/@types/react-is/-/react-is-17.0.0.tgz#6b60190ae60591ae0c83d6f3854e61e08f5a7976"
+  integrity sha512-A0DQ1YWZ0RG2+PV7neAotNCIh8gZ3z7tQnDJyS2xRPDNtAtSPcJ9YyfMP8be36Ha0kQRzbZCrrTMznA4blqO5g==
   dependencies:
     "@types/react" "*"
 
@@ -8742,7 +8777,7 @@ polished@^2.3.0:
   dependencies:
     "@babel/runtime" "^7.2.0"
 
-polished@^4.1.1:
+polished@^4.0.3, polished@^4.1.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/polished/-/polished-4.1.1.tgz#40442cc973348e466f2918cdf647531bb6c29bfb"
   integrity sha512-4MZTrfPMPRLD7ac8b+2JZxei58zw6N1hFkdBDERif5Tlj19y3vPoPusrLG+mJIlPTGnUlKw3+yWz0BazvMx1vg==
