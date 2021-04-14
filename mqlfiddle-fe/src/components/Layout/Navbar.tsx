@@ -6,6 +6,7 @@ import { H2 } from "@leafygreen-ui/typography";
 
 import LoadDialog from "../LoadDialog";
 import VersionToggle from "../VersionToggle";
+import ActionMenu, { ActionMenuItemProps } from "../ActionMenu";
 
 interface NavbarProps {
   onSave: () => void;
@@ -16,6 +17,45 @@ interface NavbarProps {
   version: string;
   onVersionChange: (newVersion: string) => void;
 }
+
+const setUpTriggers = (
+  isBlank: boolean,
+  onSave: Function,
+  onLoad: Function,
+  onReset: Function,
+  onLoadTemplate: Function
+): Array<ActionMenuItemProps> => {
+  return [
+    {
+      disabled: isBlank,
+      func: onSave,
+      description: "Save Current Fiddle",
+      label: "Save",
+      glyph: "Save",
+    },
+    {
+      disabled: false,
+      func: onLoad,
+      description: "Load Fiddle",
+      label: "Load",
+      glyph: "OpenNewTab",
+    },
+    {
+      disabled: isBlank,
+      func: onReset,
+      description: "Reset Fiddle",
+      label: "Reset",
+      glyph: "Refresh",
+    },
+    {
+      disabled: !isBlank,
+      func: onLoadTemplate,
+      description: "Load Fiddle Template",
+      label: "Template",
+      glyph: "CurlyBraces",
+    },
+  ];
+};
 
 const Navbar = ({
   onSave,
@@ -57,15 +97,15 @@ const Navbar = ({
           />
         </div>
         <div className="flex items-center space-x-2 flex-grow justify-end">
-          {isBlank ? (
-            <Button onClick={onLoadTemplate}>Template</Button>
-          ) : (
-            <Button onClick={onReset}>Reset</Button>
-          )}
-          <Button onClick={onLoad}>Load</Button>
-          <Button onClick={onSave} disabled={isBlank}>
-            Save
-          </Button>
+          <ActionMenu
+            triggers={setUpTriggers(
+              isBlank,
+              onSave,
+              onLoad,
+              onReset,
+              onLoadTemplate
+            )}
+          />
           <Button onClick={onExecute} variant="primary" disabled={isBlank}>
             Execute
           </Button>

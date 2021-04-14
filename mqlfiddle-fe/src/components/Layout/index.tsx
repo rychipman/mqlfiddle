@@ -68,11 +68,6 @@ const Layout = () => {
         .then(({ data }) => {
           setSchema(data.schema);
           setMql(data.query);
-          addToast(
-            "success",
-            "Fiddle Loaded",
-            "The saved fiddle has successfully loaded!"
-          );
         })
         .catch((e) => console.error(e));
     }
