@@ -7,6 +7,7 @@ import { H2 } from "@leafygreen-ui/typography";
 import LoadDialog from "../LoadDialog";
 import VersionToggle from "../VersionToggle";
 import ActionMenu, { ActionMenuItemProps } from "../ActionMenu";
+import { useTheme } from "../../hooks/useTheme";
 
 interface NavbarProps {
   onSave: () => void;
@@ -69,6 +70,7 @@ const Navbar = ({
   const [loadOpen, setLoadOpen] = useState<boolean>(false);
   const [fiddleId, setFiddleId] = useState<string>("");
   const history = useHistory();
+  const { dark } = useTheme();
 
   const onLoad = () => {
     if (fiddleId) {
@@ -106,7 +108,12 @@ const Navbar = ({
               onLoadTemplate
             )}
           />
-          <Button onClick={onExecute} variant="primary" disabled={isBlank}>
+          <Button
+            onClick={onExecute}
+            variant="primary"
+            disabled={isBlank}
+            darkMode={dark}
+          >
             Execute
           </Button>
         </div>
