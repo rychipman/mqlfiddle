@@ -6,6 +6,7 @@ import {
   Redirect,
 } from "react-router-dom";
 import { ToastProvider } from "react-toast-notifications";
+import { ThemeProvider } from "./context/themeContext";
 
 import Layout from "./components/Layout";
 import Toast from "./components/Toast";
@@ -18,14 +19,16 @@ function App() {
           exact
           path={["/", "/:code"]}
           children={
-            <ToastProvider
-              components={{ Toast }}
-              placement="bottom-left"
-              autoDismissTimeout={2500}
-              autoDismiss
-            >
-              <Layout />
-            </ToastProvider>
+            <ThemeProvider>
+              <ToastProvider
+                components={{ Toast }}
+                placement="bottom-left"
+                autoDismissTimeout={2500}
+                autoDismiss
+              >
+                <Layout />
+              </ToastProvider>
+            </ThemeProvider>
           }
         />
         <Redirect to="/" />

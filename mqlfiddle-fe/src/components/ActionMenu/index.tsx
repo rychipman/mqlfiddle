@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Menu, MenuItem } from "@leafygreen-ui/menu";
 import IconButton from "@leafygreen-ui/icon-button";
 import Icon from "@leafygreen-ui/icon";
+import { useTheme } from "../../hooks/useTheme";
 
 export interface ActionMenuItemProps {
   label: string;
@@ -17,6 +18,7 @@ interface ActionMenuProps {
 
 const ActionMenu = ({ triggers }: ActionMenuProps) => {
   const [open, setOpen] = useState(false);
+  const { dark } = useTheme();
 
   const onClick = (callback: Function) => {
     setOpen(false);
@@ -29,7 +31,11 @@ const ActionMenu = ({ triggers }: ActionMenuProps) => {
       justify="start"
       open={open}
       trigger={
-        <IconButton onClick={() => setOpen(!open)} aria-label="action-menu">
+        <IconButton
+          darkMode={dark}
+          onClick={() => setOpen(!open)}
+          aria-label="action-menu"
+        >
           <Icon glyph="Menu" />
         </IconButton>
       }
