@@ -23,4 +23,4 @@ WORKDIR /srv/mqlfiddle
 COPY --from=0 /mqlfiddle-api/target/release/mqlfiddle-api .
 COPY --from=1 /usr/src/mqlfiddle/mqlfiddle-fe/build/ ./web
 EXPOSE 8080
-CMD ["./mqlfiddle-api"]
+CMD MQLFIDDLE_API_ADDR=0.0.0.0:8080 MQLFIDDLE_STATIC_FILE_DIR=./web ./mqlfiddle-api
