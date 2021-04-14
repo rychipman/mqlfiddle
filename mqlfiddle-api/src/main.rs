@@ -74,7 +74,7 @@ async fn save(info: web::Json<SaveData>, mongo: web::Data<Client>) -> web::Json<
     web::Json(SaveResponse { code })
 }
 
-#[get("/api/{hash}")]
+#[get("/api/fiddle/{hash}")]
 async fn load(path: web::Path<String>, mongo: web::Data<Client>) -> web::Json<SaveData> {
     let db = mongo.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
