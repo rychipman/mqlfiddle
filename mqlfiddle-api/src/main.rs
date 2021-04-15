@@ -229,7 +229,6 @@ async fn main() -> std::io::Result<()> {
     let four_four_uri =
         std::env::var("MDB_FOUR_FOUR").unwrap_or("mongodb://localhost:27017".into());
     let api_db_uri = std::env::var("MDB_API_URI").unwrap_or("mongodb://localhost:27017".into());
-    let test_secret = std::env::var("TEST_SECRET").unwrap_or("not set in env".into());
 
     let three_six = Client::with_uri_str(&three_six_uri).await.unwrap();
     let four_zero = Client::with_uri_str(&four_zero_uri).await.unwrap();
@@ -250,16 +249,11 @@ async fn main() -> std::io::Result<()> {
         std::env::var("MQLFIDDLE_STATIC_FILE_DIR").unwrap_or("../mqlfiddle-fe/build".to_string());
 
     HttpServer::new(move || {
-        let info_res = test_secret.clone();
         App::new()
             .wrap(Logger::default())
             .service(execute)
             .service(save)
             .service(load)
-            .route(
-                "/api/info",
-                web::get().to(move || web::HttpResponse::Ok().body(info_res.clone())),
-            )
             .service(Files::new("/", &static_file_dir).index_file("index.html"))
             .data(mongo_clients.clone())
             .route("/", web::get().to(|| web::HttpResponse::Ok().body("/")))
