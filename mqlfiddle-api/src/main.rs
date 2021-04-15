@@ -100,7 +100,7 @@ impl FromRequest for User {
             .cookie("auth_user")
             .map(|c| c.value().to_string())
             .ok_or(ErrorForbidden("no auth cookie"))
-            .or_else(|e| std::env::var("DEFAULT_AUTH_USER").map_err(|_| e))
+            .or_else(|_| Ok(std::env::var("DEFAULT_AUTH_USER").unwrap_or("Guest".into())))
             .map(|sso_username| User { sso_username });
         ready(res)
     }
