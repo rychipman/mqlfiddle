@@ -1,10 +1,16 @@
 use std::collections::HashMap;
 
 use actix_files::Files;
-use actix_web::{get, middleware::Logger, post, web, App, HttpServer};
+use actix_web::{
+    dev, error::ErrorForbidden, get, middleware::Logger, post, web, App, Error, FromRequest,
+    HttpMessage, HttpRequest, HttpServer,
+};
 use bson::{doc, Document};
 use crypto::digest::Digest;
-use futures::stream::StreamExt;
+use futures::{
+    future::{ready, Ready},
+    stream::StreamExt,
+};
 use mongodb::{options::UpdateOptions, Client};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
@@ -80,10 +86,31 @@ fn get_client<'a>(version: &str, clients: &'a MongoClients) -> &'a Client {
     }
 }
 
+struct User {
+    sso_username: String,
+}
+
+impl FromRequest for User {
+    type Error = Error;
+    type Future = Ready<Result<Self, Self::Error>>;
+    type Config = ();
+
+    fn from_request(req: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
+        let res = req
+            .cookie("auth_user")
+            .map(|c| c.value().to_string())
+            .ok_or(ErrorForbidden("no auth cookie"))
+            .or_else(|e| std::env::var("DEFAULT_AUTH_USER").map_err(|_| e))
+            .map(|sso_username| User { sso_username });
+        ready(res)
+    }
+}
+
 #[post("/api/save")]
 async fn save(
     info: web::Json<SaveData>,
     mongo: web::Data<MongoClients>,
+    user: User,
 ) -> web::Json<SaveResponse> {
     let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
@@ -92,7 +119,12 @@ async fn save(
 
     col.update_one(
         doc! { "code": &code },
-        doc! { "$set": doc! { "query": &info.query, "schema": &info.schema, "version": &info.version}},
+        doc! { "$set": doc! {
+            "user": &user.sso_username,
+            "query": &info.query,
+            "schema": &info.schema,
+            "version": &info.version,
+        }},
         UpdateOptions::builder().upsert(true).build(),
     )
     .await
