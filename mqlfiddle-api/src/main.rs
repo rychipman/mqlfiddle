@@ -120,6 +120,18 @@ async fn save(
     web::Json(SaveResponse { code })
 }
 
+#[derive(Serialize)]
+struct GetCurrentUserResponse {
+    username: String,
+}
+
+#[get("/api/current_user")]
+async fn get_current_user(user: User) -> web::Json<GetCurrentUserResponse> {
+    web::Json(GetCurrentUserResponse {
+        username: user.sso_username,
+    })
+}
+
 #[get("/api/fiddle/{hash}")]
 async fn load(path: web::Path<String>, mongo: web::Data<MongoClients>) -> web::Json<SaveData> {
     let db = mongo.api_client.database(SAVE_DB);
@@ -286,6 +298,7 @@ async fn main() -> std::io::Result<()> {
             .service(execute)
             .service(save)
             .service(load)
+            .service(get_current_user)
             .service(Files::new("/", &static_file_dir).index_file("index.html"))
             .data(mongo_clients.clone())
             .route("/", web::get().to(|| web::HttpResponse::Ok().body("/")))
