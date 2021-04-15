@@ -2,8 +2,21 @@ use std::collections::HashMap;
 
 use actix_files::Files;
 use actix_web::{
-    dev, error::ErrorForbidden, get, middleware::Logger, post, web, App, Error, FromRequest,
-    HttpMessage, HttpRequest, HttpServer,
+    dev,
+    error::ErrorForbidden,
+    get,
+    guard,
+    http,
+    middleware::Logger,
+    post,
+    web,
+    App,
+    Error,
+    FromRequest,
+    HttpMessage,
+    HttpRequest,
+    HttpResponse,
+    HttpServer,
 };
 use bson::{doc, Document};
 use crypto::digest::Digest;
@@ -333,7 +346,16 @@ async fn main() -> std::io::Result<()> {
             .service(get_my_fiddles)
             .service(Files::new("/", &static_file_dir).index_file("index.html"))
             .data(mongo_clients.clone())
-            .route("/", web::get().to(|| web::HttpResponse::Ok().body("/")))
+            .default_service(
+                web::resource("")
+                    .route(web::get().to(|| {
+                        web::HttpResponse::Found()
+                            .header(http::header::LOCATION, "/")
+                            .finish()
+                    }))
+                    .route(web::route().guard(guard::Not(guard::Get())))
+                    .to(HttpResponse::MethodNotAllowed),
+            )
     })
     .bind(addr)?
     .run()
