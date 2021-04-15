@@ -24,13 +24,11 @@ export const QUERY_SYNTAX_OPTIONS: QuerySyntaxOptionProps[] = [
     language: "json",
     template: JSON.stringify(
       {
-        collection: "foo",
-        query: {
-          pipeline: [
-            { $lookup: { from: "bar", as: "bar", pipeline: [] } },
-            { $addFields: { c: "abc" } },
-          ],
-        },
+        aggregate: "foo",
+        pipeline: [
+          { $lookup: { from: "bar", as: "bar", pipeline: [] } },
+          { $addFields: { c: "abc" } },
+        ],
       },
       null,
       2
@@ -40,11 +38,11 @@ export const QUERY_SYNTAX_OPTIONS: QuerySyntaxOptionProps[] = [
         return mql;
       },
       [QuerySyntaxEnum.SHELL]: (mql: string) => {
-        const { collection, query } = JSON.parse(mql);
-        const command =
-          Object.keys(query)[0] === "pipeline" ? "aggregate" : "find";
-        const predicate = JSON.stringify(query[Object.keys(query)[0]], null, 2);
-        return `db.${collection}.${command}(${predicate})`;
+        console.log(JSON.parse(mql));
+        const command = JSON.parse(mql);
+        const op = Object.keys(command)[0] === "aggregate" ? "aggregate" : "find"
+        const predicate = JSON.stringify(command[Object.keys(command)[1]], null, 2);
+        return `db.${command[op]}.${op}(${predicate})`;
       },
     },
   },
