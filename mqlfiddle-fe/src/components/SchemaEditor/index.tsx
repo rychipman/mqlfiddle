@@ -1,22 +1,16 @@
 import React, { Dispatch, SetStateAction } from "react";
-import MEditor from "@monaco-editor/react";
+import Editor from "@monaco-editor/react";
 import { Subtitle } from "@leafygreen-ui/typography";
 import { uiColors } from "@leafygreen-ui/palette";
 
 import { useTheme } from "../../hooks/useTheme";
+
 interface SchemaEditorProps {
-  data: string | undefined;
-  setData: Dispatch<SetStateAction<string | undefined>>;
-  title: string;
-  defaultLanguage: "json" | "javascript";
+  schema: string | undefined;
+  setSchema: Dispatch<SetStateAction<string | undefined>>;
 }
 
-const Editor = ({
-  data,
-  setData,
-  title,
-  defaultLanguage,
-}: SchemaEditorProps) => {
+const SchemaEditor = ({ schema, setSchema }: SchemaEditorProps) => {
   const { dark } = useTheme();
 
   const handleEditorWillMount = (monaco: any) => {
@@ -30,15 +24,15 @@ const Editor = ({
 
   return (
     <div className="h-full w-full space-y-1 flex flex-col">
-      <Subtitle className="font-mono text-center dark:text-white">
-        {title}
+      <Subtitle className="font-bold font-mono text-center dark:text-white">
+        Data
       </Subtitle>
-      <MEditor
+      <Editor
         theme={dark ? "dark-theme" : "light"}
-        defaultLanguage={defaultLanguage}
+        defaultLanguage="json"
         beforeMount={handleEditorWillMount}
-        value={data}
-        onChange={setData}
+        value={schema}
+        onChange={setSchema}
         height="95%"
         options={{
           fontSize: "18px",
@@ -58,8 +52,4 @@ const Editor = ({
   );
 };
 
-Editor.defaultProps = {
-  defaultLanguage: "javascript",
-};
-
-export default Editor;
+export default SchemaEditor;

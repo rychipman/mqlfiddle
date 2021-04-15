@@ -32,7 +32,8 @@ module.exports = {
     extend: {},
   },
   variants: {
-    extend: {},
+    cursor: ["responsive", "hover", "focus", "active", "disabled"],
+    textColor: ["responsive", "hover", "focus", "active", "disabled", "dark"],
   },
   plugins: [],
 };

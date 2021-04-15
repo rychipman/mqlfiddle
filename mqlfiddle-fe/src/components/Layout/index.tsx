@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import isEmpty from "is-empty";
 
 import { useToasts } from "../../hooks/useToast";
 
-import { VERSIONS } from "../../constants";
+import { VERSIONS, QUERY_SYNTAX_OPTIONS } from "../../constants";
+import { QuerySyntaxEnum, QuerySyntaxOptionProps } from "../../constants";
 
 import Navbar from "./Navbar";
-import Editor from "../Editor";
+import SchemaEditor from "../SchemaEditor";
+import MQLEditor from "../MQLEditor";
+
 import Output, { OutputProps } from "../Output";
 import ThemeToggle from "../ThemeToggle";
 
@@ -44,29 +47,21 @@ const defaultSchema = JSON.stringify(
   2
 );
 
-const defaultMQL = JSON.stringify(
-  {
-    collection: "foo",
-    query: {
-      pipeline: [
-        { $lookup: { from: "bar", as: "bar", pipeline: [] } },
-        { $addFields: { c: "abc" } },
-      ],
-    },
-  },
-  null,
-  2
-);
-
 const defaultVersion = VERSIONS[VERSIONS.length - 1].value;
 
 const Layout = () => {
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
-  const [mql, setMql] = useState<string | undefined>(defaultMQL);
+  const [mql, setMql] = useState<string | undefined>(
+    QUERY_SYNTAX_OPTIONS[0].template
+  );
   const [output, setOutput] = useState<OutputProps | undefined>(undefined);
   const [version, setVersion] = useState(defaultVersion);
   const { code } = useParams<{ code?: string }>();
+  const [querySyntax, setQuerySyntax] = useState<
+    QuerySyntaxOptionProps | undefined
+  >(QUERY_SYNTAX_OPTIONS[0]);
   const { addToast } = useToasts();
+  const mqlEditorRef = useRef<any | undefined>();
 
   useEffect(() => {
     if (code) {
@@ -81,9 +76,10 @@ const Layout = () => {
   }, [code]);
 
   const onExecute = () => {
+    const query = querySyntax!.conversions[QuerySyntaxEnum.COMMAND]!(mql!);
     executeFiddle({
       schema: JSON.parse(schema!),
-      query: JSON.parse(mql!),
+      query: JSON.parse(query),
       version,
     })
       .then((res) => {
@@ -129,10 +125,11 @@ const Layout = () => {
   };
 
   const onLoadTemplate = () => {
-    setMql(defaultMQL);
+    setMql(querySyntax!.template);
     setSchema(defaultSchema);
     if (output !== undefined) setOutput(undefined);
     addToast("info", "Fiddle Template Loaded", "Have Fun!!");
+    mqlEditorRef.current.forceFormatDocument();
   };
 
   const onVersionChange = (newVersion: string) => {
@@ -152,7 +149,7 @@ const Layout = () => {
         onSave={onSave}
         onReset={onReset}
         onLoadTemplate={onLoadTemplate}
-        isBlank={isEmpty(mql) && isEmpty(schema)}
+        isBlank={isEmpty(mql) || isEmpty(schema)}
         version={version}
         onVersionChange={onVersionChange}
       />
@@ -161,20 +158,16 @@ const Layout = () => {
           className={clsx("w-full flex flex-none", output ? "h-3/5" : "h-full")}
         >
           <div className="w-1/2 h-full py-1.5">
-            <Editor
-              data={schema}
-              setData={setSchema}
-              title="Data"
-              defaultLanguage="json"
-            />
+            <SchemaEditor schema={schema} setSchema={setSchema} />
           </div>
           <div className="border-r border-gray-light dark:border-gray-dark h-full" />
           <div className="w-1/2 h-full py-1.5">
-            <Editor
-              data={mql}
-              setData={setMql}
-              title="MQL"
-              defaultLanguage="json"
+            <MQLEditor
+              ref={mqlEditorRef}
+              mql={mql}
+              setMql={setMql}
+              querySyntax={querySyntax}
+              setQuerySyntax={setQuerySyntax}
             />
           </div>
         </div>
