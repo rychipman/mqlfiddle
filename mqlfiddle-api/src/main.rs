@@ -43,18 +43,22 @@ const DEFAULT_QUERY: &str =
 const DEFAULT_VERSION: &str = "4.4";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-enum QueryOperation {
-    #[serde(rename = "pipeline")]
-    Aggregation(Vec<Document>),
-    #[serde(rename = "filter")]
-    Find(Document),
+struct AggregateOp {
+    aggregate: String,
+    pipeline: Vec<Document>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-struct Query {
-    collection: String,
-    #[serde(rename = "query")]
-    operation: QueryOperation,
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct FindOp {
+    find: String,
+    filter: Document,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+enum Query {
+    Aggregate(AggregateOp),
+    Find(FindOp),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -228,7 +232,6 @@ async fn execute(
     let client = get_client(&info.version, &mongo);
 
     let db = client.database(&dbname);
-    let col = info.schema.iter().nth(0).unwrap().0;
 
     for (col, docs) in info.schema.iter() {
         db.collection(col)
@@ -240,11 +243,11 @@ async fn execute(
     let mut result = vec![];
     let execution_stats;
 
-    match &info.query.operation {
-        QueryOperation::Aggregation(pipeline) => {
+    match &info.query {
+        Query::Aggregate(op) => {
             let mut cursor = db
-                .collection(&info.query.collection)
-                .aggregate(pipeline.clone(), None)
+                .collection(&op.aggregate)
+                .aggregate(op.pipeline.clone(), None)
                 .await
                 .unwrap();
 
@@ -254,8 +257,8 @@ async fn execute(
 
             let explain_doc = doc! {
                 "explain": doc! {
-                    "aggregate": &col,
-                    "pipeline": pipeline,
+                    "aggregate": &op.aggregate,
+                    "pipeline": &op.pipeline,
                     "cursor": doc! {}
                 },
                 "verbosity": "executionStats"
@@ -263,10 +266,10 @@ async fn execute(
 
             execution_stats = db.run_command(explain_doc, None).await.unwrap();
         }
-        QueryOperation::Find(filter) => {
+        Query::Find(op) => {
             let mut cursor = db
-                .collection(&info.query.collection)
-                .find(filter.clone(), None)
+                .collection(&op.find)
+                .find(op.filter.clone(), None)
                 .await
                 .unwrap();
 
@@ -276,8 +279,8 @@ async fn execute(
 
             let explain_doc = doc! {
                 "explain": doc! {
-                    "find": &col,
-                    "filter": filter,
+                    "find": &op.find,
+                    "filter": &op.filter,
                 },
                 "verbosity": "executionStats"
             };

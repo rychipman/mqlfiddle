@@ -63,12 +63,8 @@ export const QUERY_SYNTAX_OPTIONS: QuerySyntaxOptionProps[] = [
         const groups = regex!.groups;
         return JSON.stringify(
           {
-            collection: groups!.collection,
-            query: {
-              [groups!.command === "aggregate"
-                ? "pipeline"
-                : "filter"]: JSON.parse(groups!.predicate),
-            },
+            [groups!.command === "aggregate" ? "aggregate" : "find"]: groups!.collection,
+            [groups!.command === "aggregate" ? "pipeline" : "filter"]: JSON.parse(groups!.predicate),
           },
           null,
           2
