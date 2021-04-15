@@ -121,6 +121,37 @@ async fn save(
 }
 
 #[derive(Serialize)]
+struct GetMyFiddlesResponse {
+    fiddle_codes: Vec<String>,
+}
+
+#[get("/api/current_user/my_fiddles")]
+async fn get_my_fiddles(
+    user: User,
+    mongo: web::Data<MongoClients>,
+) -> web::Json<GetMyFiddlesResponse> {
+    #[derive(Debug, Serialize, Deserialize)]
+    struct Fiddle {
+        code: String,
+    }
+
+    let db = mongo.api_client.database(SAVE_DB);
+    let col = db.collection_with_type::<Fiddle>(SAVE_COL);
+
+    let mut cursor = col
+        .find(doc! {"user": user.sso_username}, None)
+        .await
+        .unwrap();
+
+    let mut fiddle_codes = Vec::new();
+    while let Some(fiddle) = cursor.next().await {
+        fiddle_codes.push(fiddle.unwrap().code);
+    }
+
+    web::Json(GetMyFiddlesResponse { fiddle_codes })
+}
+
+#[derive(Serialize)]
 struct GetCurrentUserResponse {
     username: String,
 }
@@ -299,6 +330,7 @@ async fn main() -> std::io::Result<()> {
             .service(save)
             .service(load)
             .service(get_current_user)
+            .service(get_my_fiddles)
             .service(Files::new("/", &static_file_dir).index_file("index.html"))
             .data(mongo_clients.clone())
             .route("/", web::get().to(|| web::HttpResponse::Ok().body("/")))
