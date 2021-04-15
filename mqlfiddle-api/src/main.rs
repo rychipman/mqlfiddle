@@ -29,25 +29,12 @@ const DEFAULT_QUERY: &str =
      \"abc\"\n        }\n      }\n    ]\n  }\n}";
 const DEFAULT_VERSION: &str = "4.4";
 
-#[derive(Serialize)]
-struct ExecuteResponse {
-    result: Vec<Document>,
-    execution_stats: Document,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 enum QueryOperation {
     #[serde(rename = "pipeline")]
     Aggregation(Vec<Document>),
     #[serde(rename = "filter")]
     Find(Document),
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-struct ExecuteRequest {
-    schema: HashMap<String, Vec<Document>>,
-    query: Query,
-    version: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -156,6 +143,19 @@ async fn load(path: web::Path<String>, mongo: web::Data<MongoClients>) -> web::J
         schema: DEFAULT_SCHEMA.into(),
         version: DEFAULT_VERSION.into(),
     })
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+struct ExecuteRequest {
+    schema: HashMap<String, Vec<Document>>,
+    query: Query,
+    version: String,
+}
+
+#[derive(Serialize)]
+struct ExecuteResponse {
+    result: Vec<Document>,
+    execution_stats: Document,
 }
 
 #[post("/api/execute")]
