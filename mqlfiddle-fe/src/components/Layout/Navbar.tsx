@@ -87,7 +87,7 @@ const Navbar = ({
 
 	useEffect(() => {
 		getUsername().then(setUsername)
-	})
+	}, [])
 
 	const onLoad = () => {
 		if (fiddleId) {
