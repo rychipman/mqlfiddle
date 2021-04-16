@@ -91,6 +91,7 @@ const Navbar = ({
 
 	const onSelectFiddle = (fiddleId: string) => {
 		history.push(fiddleId);
+		getMyFiddles().then(setSavedFiddles);
 	};
 
 	return (
