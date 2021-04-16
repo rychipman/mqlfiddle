@@ -66,20 +66,22 @@ const Output = ({ results, stats, error }: OutputProps) => {
 						/>
 					</Tab>
 				)}
-				<Tab name="Errors" className="p-2">
-					<ReactJson
-						name={false}
-						src={{ 'error': error }}
-						theme={dark ? "harmonic" : "rjv-default"}
-						style={{
-							backgroundColor: "transparent",
-						}}
-						displayDataTypes={false}
-						displayObjectSize={false}
-						enableClipboard={false}
-						indentWidth={2}
-					/>
-				</Tab>
+				{false && (
+					<Tab name="Errors" className="p-2">
+						<ReactJson
+							name={false}
+							src={{ errors: [error], foo: 'bar' }}
+							theme={dark ? "harmonic" : "rjv-default"}
+							style={{
+								backgroundColor: "transparent",
+							}}
+							displayDataTypes={false}
+							displayObjectSize={false}
+							enableClipboard={false}
+							indentWidth={2}
+						/>
+					</Tab>
+				)}
 				{stats && (
 					<Badge
 						variant="green"
