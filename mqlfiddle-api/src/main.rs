@@ -23,16 +23,6 @@ use thiserror::Error;
 const SAVE_DB: &str = "fiddleback";
 const SAVE_COL: &str = "spider";
 
-const DEFAULT_SCHEMA: &str = "{\n  \"foo\": [\n    {\n      \"a\": 1\n    },\n    {\n      \"a\": \
-                              2\n    }\n  ],\n  \"bar\": [\n    {\n      \"b\": 1\n    },\n    \
-                              {\n      \"b\": 2\n    }\n  ]\n}";
-const DEFAULT_QUERY: &str =
-    "{\n  \"collection\": \"foo\",\n  \"query\": {\n    \"pipeline\": [\n      {\n        \
-     \"$lookup\": {\n          \"from\": \"bar\",\n          \"as\": \"bar\",\n          \
-     \"pipeline\": []\n        }\n      },\n      {\n        \"$addFields\": {\n          \"c\": \
-     \"abc\"\n        }\n      }\n    ]\n  }\n}";
-const DEFAULT_VERSION: &str = "4.4";
-
 #[derive(Error, Debug)]
 enum Error {
     #[error("MongoDB {0} not available")]
@@ -41,6 +31,8 @@ enum Error {
     MongoDB(#[from] mongodb::error::Error),
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error("fiddle {0} not found")]
+    FiddleNotFound(String),
 }
 
 impl ResponseError for Error {}
@@ -68,6 +60,7 @@ enum Query {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct SaveData {
+    name: String,
     schema: String,
     query: String,
     version: String,
@@ -118,8 +111,9 @@ async fn save(
 
     col.update_one(
         doc! { "code": &code },
-        doc! { "$set": doc! {
+        doc! { "$set": bson:: doc! {
             "user": &user.sso_username,
+            "name": &info.name,
             "query": &info.query,
             "schema": &info.schema,
             "version": &info.version,
@@ -148,9 +142,15 @@ async fn get_mongodb_versions(
     web::Json(GetMongodbVersionsResponse { versions })
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct FiddleDescriptor {
+    code: String,
+    name: String,
+}
+
 #[derive(Serialize)]
 struct GetMyFiddlesResponse {
-    fiddle_codes: Vec<String>,
+    fiddles: Vec<FiddleDescriptor>,
 }
 
 #[get("/api/current_user/my_fiddles")]
@@ -158,22 +158,17 @@ async fn get_my_fiddles(
     user: User,
     mongo: web::Data<MongoClients>,
 ) -> Result<web::Json<GetMyFiddlesResponse>> {
-    #[derive(Debug, Serialize, Deserialize)]
-    struct Fiddle {
-        code: String,
-    }
-
     let db = mongo.api_client.database(SAVE_DB);
-    let col = db.collection_with_type::<Fiddle>(SAVE_COL);
+    let col = db.collection_with_type::<FiddleDescriptor>(SAVE_COL);
 
     let mut cursor = col.find(doc! {"user": user.sso_username}, None).await?;
 
-    let mut fiddle_codes = Vec::new();
+    let mut fiddles = Vec::new();
     while let Some(fiddle) = cursor.next().await {
-        fiddle_codes.push(fiddle?.code);
+        fiddles.push(fiddle?);
     }
 
-    Ok(web::Json(GetMyFiddlesResponse { fiddle_codes }))
+    Ok(web::Json(GetMyFiddlesResponse { fiddles }))
 }
 
 #[derive(Serialize)]
@@ -195,22 +190,11 @@ async fn load(
 ) -> Result<web::Json<SaveData>> {
     let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
-
-    let res = col.find_one(doc! {"code": path.into_inner()}, None).await?;
-    let data = match res {
-        Some(doc) => SaveData {
-            query: doc.query,
-            schema: doc.schema,
-            version: doc.version,
-        },
-        None => SaveData {
-            query: DEFAULT_QUERY.into(),
-            schema: DEFAULT_SCHEMA.into(),
-            version: DEFAULT_VERSION.into(),
-        },
-    };
-
-    Ok(web::Json(data))
+    let fiddle_id = path.into_inner();
+    col.find_one(doc! {"code": &fiddle_id}, None)
+        .await?
+        .ok_or_else(|| Error::FiddleNotFound(fiddle_id))
+        .map(web::Json)
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

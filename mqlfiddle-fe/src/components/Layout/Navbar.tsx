@@ -10,6 +10,7 @@ import SavedFiddleToggle from "../SavedFiddleToggle";
 import ActionMenu, { ActionMenuItemProps } from "../ActionMenu";
 import SaveFiddleModal from '../SaveFiddleModal';
 import { useTheme } from "../../hooks/useTheme";
+import { FiddleDescriptor } from "../../types";
 
 interface NavbarProps {
 	onSave: (fiddleName: string) => void;
@@ -63,7 +64,7 @@ const getMyFiddles = () =>
 		method: "get",
 		url: "/api/current_user/my_fiddles",
 	})
-		.then(res => res.data.fiddle_codes)
+		.then(res => res.data.fiddles)
 		.catch(e => {
 			console.error(JSON.stringify(e.data.response))
 		});
@@ -81,7 +82,7 @@ const Navbar = ({
 	currentFiddleId,
 	currentFiddleName,
 }: NavbarProps) => {
-	const [savedFiddles, setSavedFiddles] = useState<Array<string> | undefined>();
+	const [savedFiddles, setSavedFiddles] = useState<Array<FiddleDescriptor> | undefined>();
 	const [username, setUsername] = useState<string>("");
 	const [confirmSaveDialogOpen, setConfirmSaveDialogOpen] = useState<boolean>(false);
 	const history = useHistory();

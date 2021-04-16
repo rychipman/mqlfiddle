@@ -2,9 +2,10 @@ import React from "react";
 import { Option, OptionGroup, Select, Size } from "@leafygreen-ui/select";
 
 import { useTheme } from "../../hooks/useTheme";
+import { FiddleDescriptor } from "../../types";
 
 interface SavedFiddleToggleProps {
-	fiddles: Array<string> | undefined;
+	fiddles: Array<FiddleDescriptor> | undefined;
 	onSelect: (fiddleId: string) => void;
 	currentFiddle: string | undefined;
 }
@@ -30,8 +31,8 @@ const SavedFiddleToggle = ({
 				{fiddles && (
 					<OptionGroup label="My Saved Fiddles">
 						{fiddles.map(f => (
-							<Option key={`fiddle-option-saved-${f}`} value={f}>
-								{f}
+							<Option key={`fiddle-option-saved-${f.code}`} value={f.code}>
+								{f.name}
 							</Option>
 						))}
 					</OptionGroup>

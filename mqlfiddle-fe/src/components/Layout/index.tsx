@@ -162,6 +162,7 @@ const Layout = () => {
 
 	const onSave = (fiddleName: string) => {
 		saveFiddle({
+			name: fiddleName,
 			schema: schema!,
 			query: mql!,
 			version,
