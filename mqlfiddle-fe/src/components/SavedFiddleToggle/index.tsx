@@ -14,7 +14,7 @@ const SavedFiddleToggle = ({
 }: SavedFiddleToggleProps) => {
 	const { dark } = useTheme();
 	return (
-		<div className="w-40">
+		<div>
 			<Select
 				aria-labelledby="saved-fiddle-toggle"
 				description=""
