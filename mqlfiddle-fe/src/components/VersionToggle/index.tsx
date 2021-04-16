@@ -15,7 +15,6 @@ const VersionToggle = ({
 	availableVersions,
 }: VersionToggleProps) => {
 	const { dark } = useTheme();
-
 	return (
 		<div className="w-40">
 			<Select

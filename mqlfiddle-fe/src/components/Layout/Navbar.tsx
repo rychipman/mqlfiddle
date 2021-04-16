@@ -7,6 +7,7 @@ import axios from "axios";
 
 import LoadDialog from "../LoadDialog";
 import VersionToggle from "../VersionToggle";
+import SavedFiddleToggle from "../SavedFiddleToggle";
 import ActionMenu, { ActionMenuItemProps } from "../ActionMenu";
 import { useTheme } from "../../hooks/useTheme";
 
@@ -71,6 +72,16 @@ const getUsername = () =>
 			console.error(JSON.stringify(e.data.response));
 		});
 
+const getMyFiddles = () =>
+	axios({
+		method: "get",
+		url: "/api/current_user/my_fiddles",
+	})
+		.then(res => res.data.fiddle_codes)
+		.catch(e => {
+			console.error(JSON.stringify(e.data.response))
+		});
+
 const Navbar = ({
 	onSave,
 	onExecute,
@@ -84,12 +95,17 @@ const Navbar = ({
 }: NavbarProps) => {
 	const [loadOpen, setLoadOpen] = useState<boolean>(false);
 	const [fiddleId, setFiddleId] = useState<string>("");
+	const [savedFiddles, setSavedFiddles] = useState<Array<string> | undefined>();
 	const [username, setUsername] = useState<string>("");
 	const history = useHistory();
 	const { dark } = useTheme();
 
 	useEffect(() => {
 		getUsername().then(setUsername);
+	}, []);
+
+	useEffect(() => {
+		getMyFiddles().then(setSavedFiddles);
 	}, []);
 
 	const onLoad = () => {
@@ -100,6 +116,10 @@ const Navbar = ({
 		} else {
 			setLoadOpen(true);
 		}
+	};
+
+	const onSelectFiddle = (fiddleId: string) => {
+		history.push(fiddleId);
 	};
 
 	const onCancel = () => {
@@ -117,6 +137,10 @@ const Navbar = ({
 						currentVersion={version}
 						onVersionChange={onVersionChange}
 						availableVersions={availableVersions}
+					/>
+					<SavedFiddleToggle
+						fiddles={savedFiddles}
+						onSelect={onSelectFiddle}
 					/>
 				</div>
 				<div className="flex items-center space-x-2 flex-grow justify-end">
