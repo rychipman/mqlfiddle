@@ -1,40 +1,41 @@
 import React from "react";
 import { Option, Select, Size } from "@leafygreen-ui/select";
 
-import { VERSIONS } from "../../constants";
 import { useTheme } from "../../hooks/useTheme";
 
 interface VersionToggleProps {
-  currentVersion: string;
-  onVersionChange: (newVersion: string) => void;
+	currentVersion: string | undefined;
+	onVersionChange: (newVersion: string) => void;
+	availableVersions: Array<string> | undefined;
 }
 
 const VersionToggle = ({
-  currentVersion,
-  onVersionChange,
+	currentVersion,
+	onVersionChange,
+	availableVersions,
 }: VersionToggleProps) => {
-  const { dark } = useTheme();
+	const { dark } = useTheme();
 
-  return (
-    <div className="w-40">
-      <Select
-        aria-labelledby="version-toggle"
-        description=""
-        placeholder="Default"
-        name="Version"
-        size={Size.Default}
-        value={currentVersion}
-        onChange={(newVersion) => onVersionChange(newVersion)}
-        darkMode={dark}
-      >
-        {VERSIONS.map((version) => (
-          <Option key={`version-option-${version.value}`} value={version.value}>
-            {version.label}
-          </Option>
-        ))}
-      </Select>
-    </div>
-  );
+	return (
+		<div className="w-40">
+			<Select
+				aria-labelledby="version-toggle"
+				description=""
+				placeholder={availableVersions ? "Select Version" : "Loading..."}
+				name="Version"
+				size={Size.Default}
+				value={currentVersion}
+				onChange={(newVersion) => onVersionChange(newVersion)}
+				darkMode={dark}
+			>
+				{availableVersions?.map((v) => (
+					<Option key={`version-option-${v}`} value={v}>
+						MongoDB {v}
+					</Option>
+				))}
+			</Select>
+		</div >
+	);
 };
 
 export default VersionToggle;

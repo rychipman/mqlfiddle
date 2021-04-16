@@ -123,7 +123,7 @@ struct GetMongodbVersionsResponse {
 async fn get_mongodb_versions(
     mongo: web::Data<MongoClients>,
 ) -> web::Json<GetMongodbVersionsResponse> {
-    let versions = vec!["3.6", "4.0", "4.2", "4.4"]
+    let versions = vec!["4.4", "4.2", "4.0", "3.6"]
         .into_iter()
         .map(String::from)
         .filter(|v| mongo.get_client(v).is_some())
