@@ -38,10 +38,14 @@ export const QUERY_SYNTAX_OPTIONS: QuerySyntaxOptionProps[] = [
         return mql;
       },
       [QuerySyntaxEnum.SHELL]: (mql: string) => {
-        console.log(JSON.parse(mql));
         const command = JSON.parse(mql);
-        const op = Object.keys(command)[0] === "aggregate" ? "aggregate" : "find"
-        const predicate = JSON.stringify(command[Object.keys(command)[1]], null, 2);
+        const op =
+          Object.keys(command)[0] === "aggregate" ? "aggregate" : "find";
+        const predicate = JSON.stringify(
+          command[Object.keys(command)[1]],
+          null,
+          2
+        );
         return `db.${command[op]}.${op}(${predicate})`;
       },
     },
@@ -61,8 +65,11 @@ export const QUERY_SYNTAX_OPTIONS: QuerySyntaxOptionProps[] = [
         const groups = regex!.groups;
         return JSON.stringify(
           {
-            [groups!.command === "aggregate" ? "aggregate" : "find"]: groups!.collection,
-            [groups!.command === "aggregate" ? "pipeline" : "filter"]: JSON.parse(groups!.predicate),
+            [groups!.command === "aggregate" ? "aggregate" : "find"]: groups!
+              .collection,
+            [groups!.command === "aggregate"
+              ? "pipeline"
+              : "filter"]: JSON.parse(groups!.predicate),
           },
           null,
           2

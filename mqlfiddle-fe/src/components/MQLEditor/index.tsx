@@ -8,23 +8,40 @@ import React, {
 import Editor from "@monaco-editor/react";
 import { Disclaimer, Subtitle } from "@leafygreen-ui/typography";
 import { uiColors } from "@leafygreen-ui/palette";
-
+import isEmpty from "is-empty";
 import clsx from "clsx";
 
 import { useTheme } from "../../hooks/useTheme";
 
 import { QuerySyntaxOptionProps, QUERY_SYNTAX_OPTIONS } from "../../constants";
-import isEmpty from "is-empty";
+
+import {
+  getCommandSuggestions,
+  getQuerySuggestions,
+  getStageCompletions,
+} from "../../helpers";
 
 interface MQLEditorProps {
   mql: string | undefined;
   setMql: Dispatch<SetStateAction<string | undefined>>;
   querySyntax: QuerySyntaxOptionProps | undefined;
   setQuerySyntax: Dispatch<SetStateAction<QuerySyntaxOptionProps | undefined>>;
+  mqlValid: boolean;
+  setMqlValid: (valid: boolean) => void;
 }
 
 const MQLEditor = forwardRef(
-  ({ mql, setMql, querySyntax, setQuerySyntax }: MQLEditorProps, ref) => {
+  (
+    {
+      mql,
+      setMql,
+      querySyntax,
+      setQuerySyntax,
+      mqlValid,
+      setMqlValid,
+    }: MQLEditorProps,
+    ref
+  ) => {
     const { dark } = useTheme();
     const editorRef = useRef<any>(null);
 
@@ -32,7 +49,7 @@ const MQLEditor = forwardRef(
       forceFormatDocument() {
         setTimeout(() => {
           editorRef.current.getAction("editor.action.formatDocument").run();
-        }, 50);
+        }, 100);
       },
     }));
 
@@ -42,11 +59,55 @@ const MQLEditor = forwardRef(
         setMql(querySyntax!.conversions[newSyntax.value]!(mql!));
         setTimeout(() => {
           editorRef.current.getAction("editor.action.formatDocument").run();
-        }, 50);
+        }, 100);
+      }
+    };
+
+    const handleEditorValidate = (markers: any) => {
+      if (!isEmpty(markers)) {
+        if (mqlValid) {
+          setMqlValid(false);
+        }
+      } else {
+        if (!mqlValid) {
+          setMqlValid(true);
+        }
       }
     };
 
     const handleEditorWillMount = (monaco: any) => {
+      monaco.languages.registerCompletionItemProvider("javascript", {
+        provideCompletionItems: (model: any, position: any) => {
+          var textUntilPosition = model.getValueInRange({
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+          });
+
+          var match = textUntilPosition.match(/aggregate/);
+          if (match) {
+            return {
+              suggestions: [
+                ...getStageCompletions(monaco),
+                ...getQuerySuggestions(monaco),
+              ],
+            };
+          }
+
+          match = textUntilPosition.match(/find/);
+          if (match) {
+            return {
+              suggestions: [...getQuerySuggestions(monaco)],
+            };
+          }
+
+          return {
+            suggestions: getCommandSuggestions(monaco),
+          };
+        },
+      });
+
       monaco.editor.defineTheme("dark-theme", {
         base: "vs-dark",
         inherit: true,
@@ -96,6 +157,7 @@ const MQLEditor = forwardRef(
           onMount={handleEditorDidMount}
           value={mql}
           onChange={setMql}
+          onValidate={handleEditorValidate}
           height="95%"
           options={{
             fontSize: "18px",
@@ -109,6 +171,17 @@ const MQLEditor = forwardRef(
             hideCursorInOverviewRuler: true,
             overviewRulerBorder: false,
             indentWidth: 4,
+            suggest: {
+              showClasses: false,
+              showFunctions: false,
+              showUsers: false,
+              showConstructors: false,
+              showEvents: false,
+              showFolders: false,
+              showVariables: false,
+              showKeywords: false,
+              showModules: false,
+            },
           }}
         />
       </div>

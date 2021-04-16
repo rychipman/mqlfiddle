@@ -60,6 +60,9 @@ const Layout = () => {
   const [querySyntax, setQuerySyntax] = useState<
     QuerySyntaxOptionProps | undefined
   >(QUERY_SYNTAX_OPTIONS[0]);
+  const [dataValid, setDataValid] = useState<{ schema: boolean; mql: boolean }>(
+    { schema: true, mql: true }
+  );
   const { addToast } = useToasts();
   const mqlEditorRef = useRef<any | undefined>();
 
@@ -150,6 +153,7 @@ const Layout = () => {
         onReset={onReset}
         onLoadTemplate={onLoadTemplate}
         isBlank={isEmpty(mql) || isEmpty(schema)}
+        canExecute={dataValid.schema && dataValid.mql}
         version={version}
         onVersionChange={onVersionChange}
       />
@@ -168,6 +172,10 @@ const Layout = () => {
               setMql={setMql}
               querySyntax={querySyntax}
               setQuerySyntax={setQuerySyntax}
+              mqlValid={dataValid!.mql}
+              setMqlValid={(valid: boolean) =>
+                setDataValid((prev) => ({ ...prev, mql: valid }))
+              }
             />
           </div>
         </div>
