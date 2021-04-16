@@ -13,7 +13,7 @@ import { useTheme } from "../../hooks/useTheme";
 import { FiddleDescriptor } from "../../types";
 
 interface NavbarProps {
-	onSave: (fiddleName: string) => void;
+	onSave: (fiddleName: string) => Promise<void>;
 	onExecute: () => void;
 	onReset: () => void;
 	onLoadTemplate: () => void;
@@ -98,7 +98,6 @@ const Navbar = ({
 
 	const onSelectFiddle = (fiddleId: string) => {
 		history.push(fiddleId);
-		getMyFiddles().then(setSavedFiddles);
 	};
 
 	const onBeginSave = () => {
@@ -106,7 +105,9 @@ const Navbar = ({
 	};
 
 	const onConfirmSave = (fiddleName: string) => {
-		onSave(fiddleName);
+		onSave(fiddleName)
+			.then(() => getMyFiddles())
+			.then(setSavedFiddles);
 		setConfirmSaveDialogOpen(false);
 	};
 
