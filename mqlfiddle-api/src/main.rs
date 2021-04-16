@@ -294,7 +294,7 @@ async fn execute(
         }
     }
 
-    db.drop(None).await?;
+    mongo.api_client.database(&dbname).drop(None).await?;
 
     let res = ExecuteResponse {
         result,
