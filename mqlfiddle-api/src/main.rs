@@ -2,8 +2,11 @@ use std::collections::HashMap;
 
 use actix_files::Files;
 use actix_web::{
-    dev, error::ErrorForbidden, get, guard, http, middleware::Logger, post, web, App, Error,
-    FromRequest, HttpMessage, HttpRequest, HttpResponse, HttpServer,
+    dev,
+    error::{ErrorForbidden, ResponseError},
+    get, guard, http,
+    middleware::Logger,
+    post, web, App, FromRequest, HttpMessage, HttpRequest, HttpResponse, HttpServer,
 };
 use bson::{doc, Document};
 use crypto::digest::Digest;
@@ -14,6 +17,7 @@ use futures::{
 use mongodb::{options::UpdateOptions, Client};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 // http://entoweb.okstate.edu/ddd/insects/brownrecluse.htm
 const SAVE_DB: &str = "fiddleback";
@@ -28,6 +32,20 @@ const DEFAULT_QUERY: &str =
      \"pipeline\": []\n        }\n      },\n      {\n        \"$addFields\": {\n          \"c\": \
      \"abc\"\n        }\n      }\n    ]\n  }\n}";
 const DEFAULT_VERSION: &str = "4.4";
+
+#[derive(Error, Debug)]
+enum Error {
+    #[error("MongoDB {0} not available")]
+    VersionNotAvailable(String),
+    #[error(transparent)]
+    MongoDB(#[from] mongodb::error::Error),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+}
+
+impl ResponseError for Error {}
+
+type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct AggregateOp {
@@ -72,8 +90,8 @@ struct User {
 }
 
 impl FromRequest for User {
-    type Error = Error;
-    type Future = Ready<Result<Self, Self::Error>>;
+    type Error = actix_web::Error;
+    type Future = Ready<std::result::Result<Self, Self::Error>>;
     type Config = ();
 
     fn from_request(req: &HttpRequest, _payload: &mut dev::Payload) -> Self::Future {
@@ -92,7 +110,7 @@ async fn save(
     info: web::Json<SaveData>,
     mongo: web::Data<MongoClients>,
     user: User,
-) -> web::Json<SaveResponse> {
+) -> Result<web::Json<SaveResponse>> {
     let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
@@ -108,10 +126,9 @@ async fn save(
         }},
         UpdateOptions::builder().upsert(true).build(),
     )
-    .await
-    .expect("failed to save");
+    .await?;
 
-    web::Json(SaveResponse { code })
+    Ok(web::Json(SaveResponse { code }))
 }
 
 #[derive(Serialize)]
@@ -140,7 +157,7 @@ struct GetMyFiddlesResponse {
 async fn get_my_fiddles(
     user: User,
     mongo: web::Data<MongoClients>,
-) -> web::Json<GetMyFiddlesResponse> {
+) -> Result<web::Json<GetMyFiddlesResponse>> {
     #[derive(Debug, Serialize, Deserialize)]
     struct Fiddle {
         code: String,
@@ -149,17 +166,14 @@ async fn get_my_fiddles(
     let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<Fiddle>(SAVE_COL);
 
-    let mut cursor = col
-        .find(doc! {"user": user.sso_username}, None)
-        .await
-        .unwrap();
+    let mut cursor = col.find(doc! {"user": user.sso_username}, None).await?;
 
     let mut fiddle_codes = Vec::new();
     while let Some(fiddle) = cursor.next().await {
-        fiddle_codes.push(fiddle.unwrap().code);
+        fiddle_codes.push(fiddle?.code);
     }
 
-    web::Json(GetMyFiddlesResponse { fiddle_codes })
+    Ok(web::Json(GetMyFiddlesResponse { fiddle_codes }))
 }
 
 #[derive(Serialize)]
@@ -175,28 +189,28 @@ async fn get_current_user(user: User) -> web::Json<GetCurrentUserResponse> {
 }
 
 #[get("/api/fiddle/{hash}")]
-async fn load(path: web::Path<String>, mongo: web::Data<MongoClients>) -> web::Json<SaveData> {
+async fn load(
+    path: web::Path<String>,
+    mongo: web::Data<MongoClients>,
+) -> Result<web::Json<SaveData>> {
     let db = mongo.api_client.database(SAVE_DB);
     let col = db.collection_with_type::<SaveData>(SAVE_COL);
 
-    let doc = col
-        .find_one(doc! {"code": path.into_inner()}, None)
-        .await
-        .expect("couldn't query MongoDB");
-
-    if let Some(doc) = doc {
-        return web::Json(SaveData {
+    let res = col.find_one(doc! {"code": path.into_inner()}, None).await?;
+    let data = match res {
+        Some(doc) => SaveData {
             query: doc.query,
             schema: doc.schema,
             version: doc.version,
-        });
+        },
+        None => SaveData {
+            query: DEFAULT_QUERY.into(),
+            schema: DEFAULT_SCHEMA.into(),
+            version: DEFAULT_VERSION.into(),
+        },
     };
 
-    web::Json(SaveData {
-        query: DEFAULT_QUERY.into(),
-        schema: DEFAULT_SCHEMA.into(),
-        version: DEFAULT_VERSION.into(),
-    })
+    Ok(web::Json(data))
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -216,7 +230,7 @@ struct ExecuteResponse {
 async fn execute(
     info: web::Json<ExecuteRequest>,
     mongo: web::Data<MongoClients>,
-) -> web::Json<ExecuteResponse> {
+) -> Result<web::Json<ExecuteResponse>> {
     let dbname: String = thread_rng()
         .sample_iter(&Alphanumeric)
         .take(30)
@@ -225,15 +239,12 @@ async fn execute(
 
     let client = mongo
         .get_client(&info.version)
-        .expect("no client for MongoDB version");
+        .ok_or_else(|| Error::VersionNotAvailable(info.version.clone()))?;
 
     let db = client.database(&dbname);
 
     for (col, docs) in info.schema.iter() {
-        db.collection(col)
-            .insert_many(docs.clone(), None)
-            .await
-            .expect("failed to insert docs");
+        db.collection(col).insert_many(docs.clone(), None).await?;
     }
 
     let mut result = vec![];
@@ -244,11 +255,10 @@ async fn execute(
             let mut cursor = db
                 .collection(&op.aggregate)
                 .aggregate(op.pipeline.clone(), None)
-                .await
-                .unwrap();
+                .await?;
 
             while let Some(doc) = cursor.next().await {
-                result.push(doc.unwrap())
+                result.push(doc?)
             }
 
             let explain_doc = doc! {
@@ -260,17 +270,16 @@ async fn execute(
                 "verbosity": "executionStats"
             };
 
-            execution_stats = db.run_command(explain_doc, None).await.unwrap();
+            execution_stats = db.run_command(explain_doc, None).await?;
         }
         Query::Find(op) => {
             let mut cursor = db
                 .collection(&op.find)
                 .find(op.filter.clone(), None)
-                .await
-                .unwrap();
+                .await?;
 
             while let Some(doc) = cursor.next().await {
-                result.push(doc.unwrap())
+                result.push(doc?)
             }
 
             let explain_doc = doc! {
@@ -281,17 +290,17 @@ async fn execute(
                 "verbosity": "executionStats"
             };
 
-            execution_stats = db.run_command(explain_doc, None).await.unwrap();
+            execution_stats = db.run_command(explain_doc, None).await?;
         }
     }
 
-    db.drop(None).await.unwrap();
+    db.drop(None).await?;
 
     let res = ExecuteResponse {
         result,
         execution_stats,
     };
-    web::Json(res)
+    Ok(web::Json(res))
 }
 
 #[derive(Clone)]
@@ -316,32 +325,32 @@ impl MongoClients {
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
     let three_six = match std::env::var("MDB_THREE_SIX") {
-        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
     let four_zero = match std::env::var("MDB_FOUR_ZERO") {
-        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
     let four_two = match std::env::var("MDB_FOUR_TWO") {
-        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
     let four_four = match std::env::var("MDB_FOUR_FOUR") {
-        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
     let api_db_uri = std::env::var("MDB_API").unwrap_or("mongodb://localhost:27017".into());
-    let api_client = Client::with_uri_str(&api_db_uri).await.unwrap();
+    let api_client = Client::with_uri_str(&api_db_uri).await?;
 
     let mongo_clients = MongoClients {
         three_six,
@@ -379,5 +388,7 @@ async fn main() -> std::io::Result<()> {
     })
     .bind(addr)?
     .run()
-    .await
+    .await?;
+
+    Ok(())
 }

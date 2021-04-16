@@ -1392,6 +1392,7 @@ dependencies = [
  "rust-crypto",
  "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]
