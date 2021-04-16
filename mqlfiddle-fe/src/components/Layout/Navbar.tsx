@@ -24,18 +24,10 @@ interface NavbarProps {
 
 const setUpTriggers = (
 	isBlank: boolean,
-	onSave: Function,
 	onReset: Function,
 	onLoadTemplate: Function
 ): Array<ActionMenuItemProps> => {
 	return [
-		{
-			disabled: isBlank,
-			func: onSave,
-			description: "Save Current Fiddle",
-			label: "Save",
-			glyph: "Save",
-		},
 		{
 			disabled: isBlank,
 			func: onReset,
@@ -122,7 +114,6 @@ const Navbar = ({
 					<ActionMenu
 						triggers={setUpTriggers(
 							isBlank,
-							onSave,
 							onReset,
 							onLoadTemplate
 						)}
@@ -134,7 +125,14 @@ const Navbar = ({
 						darkMode={dark}
 					>
 						Execute
-          </Button>
+					</Button>
+					<Button
+						onClick={onSave}
+						disabled={isBlank || !canExecute}
+						darkMode={dark}
+					>
+						Save
+					</Button>
 				</div>
 			</div>
 		</>
