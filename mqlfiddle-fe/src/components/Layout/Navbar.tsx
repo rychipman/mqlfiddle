@@ -68,7 +68,7 @@ const getUsername = () =>
 	})
 		.then((res) => res.data.username)
 		.catch((e) => {
-			console.error(e);
+			console.error(JSON.stringify(e.data.response));
 		});
 
 const Navbar = ({

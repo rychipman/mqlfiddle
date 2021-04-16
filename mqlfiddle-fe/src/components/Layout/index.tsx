@@ -83,11 +83,11 @@ const Layout = () => {
 				}
 			})
 			.catch(e => {
-				console.error(e);
+				console.error(JSON.stringify(e.response));
 				addToast(
 					"error",
 					"Failed to load supported MongoDB versions",
-					`Check console log for specific error`
+					e.response.data,
 				);
 			})
 	}, [])
@@ -101,11 +101,11 @@ const Layout = () => {
 					setVersion(data.version);
 				})
 				.catch((e) => {
-					console.error(e);
+					console.error(JSON.stringify(e.response));
 					addToast(
 						"error",
 						"Failed to load fiddle",
-						`Check console log for specific error`
+						e.response.data,
 					);
 					history.push("/");
 				});
@@ -144,11 +144,11 @@ const Layout = () => {
 				addToast("success", "Fiddle Executed", "Trace through the output");
 			})
 			.catch((e) => {
-				console.error(e);
+				console.error(JSON.stringify(e.response));
 				addToast(
 					"error",
 					"Execution Failed",
-					`Check console log for specific error`
+					e.response.data,
 				);
 			});
 	};
@@ -169,11 +169,11 @@ const Layout = () => {
 				);
 			})
 			.catch((e) => {
-				console.error(e);
+				console.error(JSON.stringify(e.response));
 				addToast(
 					"error",
 					"Save Failed",
-					`Check console log for specific error`
+					e.response.data,
 				);
 			});
 	};
