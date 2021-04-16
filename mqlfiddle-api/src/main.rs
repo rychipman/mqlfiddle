@@ -2,21 +2,8 @@ use std::collections::HashMap;
 
 use actix_files::Files;
 use actix_web::{
-    dev,
-    error::ErrorForbidden,
-    get,
-    guard,
-    http,
-    middleware::Logger,
-    post,
-    web,
-    App,
-    Error,
-    FromRequest,
-    HttpMessage,
-    HttpRequest,
-    HttpResponse,
-    HttpServer,
+    dev, error::ErrorForbidden, get, guard, http, middleware::Logger, post, web, App, Error,
+    FromRequest, HttpMessage, HttpRequest, HttpResponse, HttpServer,
 };
 use bson::{doc, Document};
 use crypto::digest::Digest;
@@ -80,16 +67,6 @@ fn get_hash(sd: &SaveData) -> String {
     hasher.result_str()
 }
 
-fn get_client<'a>(version: &str, clients: &'a MongoClients) -> &'a Client {
-    match version {
-        "3.6" => &clients.three_six,
-        "4.0" => &clients.four_zero,
-        "4.2" => &clients.four_two,
-        "4.4" => &clients.four_four,
-        _ => &clients.four_four,
-    }
-}
-
 struct User {
     sso_username: String,
 }
@@ -135,6 +112,23 @@ async fn save(
     .expect("failed to save");
 
     web::Json(SaveResponse { code })
+}
+
+#[derive(Serialize)]
+struct GetMongodbVersionsResponse {
+    versions: Vec<String>,
+}
+
+#[get("/api/mongodb_versions")]
+async fn get_mongodb_versions(
+    mongo: web::Data<MongoClients>,
+) -> web::Json<GetMongodbVersionsResponse> {
+    let versions = vec!["3.6", "4.0", "4.2", "4.4"]
+        .into_iter()
+        .map(String::from)
+        .filter(|v| mongo.get_client(v).is_some())
+        .collect();
+    web::Json(GetMongodbVersionsResponse { versions })
 }
 
 #[derive(Serialize)]
@@ -229,7 +223,9 @@ async fn execute(
         .map(char::from)
         .collect();
 
-    let client = get_client(&info.version, &mongo);
+    let client = mongo
+        .get_client(&info.version)
+        .expect("no client for MongoDB version");
 
     let db = client.database(&dbname);
 
@@ -300,11 +296,23 @@ async fn execute(
 
 #[derive(Clone)]
 struct MongoClients {
-    three_six: Client,
-    four_zero: Client,
-    four_two: Client,
-    four_four: Client,
+    three_six: Option<Client>,
+    four_zero: Option<Client>,
+    four_two: Option<Client>,
+    four_four: Option<Client>,
     api_client: Client,
+}
+
+impl MongoClients {
+    fn get_client(&self, version: &str) -> Option<&Client> {
+        match version {
+            "3.6" => self.three_six.as_ref(),
+            "4.0" => self.four_zero.as_ref(),
+            "4.2" => self.four_two.as_ref(),
+            "4.4" => self.four_four.as_ref(),
+            _ => None,
+        }
+    }
 }
 
 #[actix_web::main]
@@ -312,19 +320,27 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let three_six_uri =
-        std::env::var("MDB_THREE_SIX").unwrap_or("mongodb://localhost:27017".into());
-    let four_zero_uri =
-        std::env::var("MDB_FOUR_ZERO").unwrap_or("mongodb://localhost:27017".into());
-    let four_two_uri = std::env::var("MDB_FOUR_TWO").unwrap_or("mongodb://localhost:27017".into());
-    let four_four_uri =
-        std::env::var("MDB_FOUR_FOUR").unwrap_or("mongodb://localhost:27017".into());
-    let api_db_uri = std::env::var("MDB_API_URI").unwrap_or("mongodb://localhost:27017".into());
+    let three_six = match std::env::var("MDB_THREE_SIX") {
+        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Err(_) => None,
+    };
 
-    let three_six = Client::with_uri_str(&three_six_uri).await.unwrap();
-    let four_zero = Client::with_uri_str(&four_zero_uri).await.unwrap();
-    let four_two = Client::with_uri_str(&four_two_uri).await.unwrap();
-    let four_four = Client::with_uri_str(&four_four_uri).await.unwrap();
+    let four_zero = match std::env::var("MDB_FOUR_ZERO") {
+        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Err(_) => None,
+    };
+
+    let four_two = match std::env::var("MDB_FOUR_TWO") {
+        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Err(_) => None,
+    };
+
+    let four_four = match std::env::var("MDB_FOUR_FOUR") {
+        Ok(uri) => Some(Client::with_uri_str(&uri).await.unwrap()),
+        Err(_) => None,
+    };
+
+    let api_db_uri = std::env::var("MDB_API").unwrap_or("mongodb://localhost:27017".into());
     let api_client = Client::with_uri_str(&api_db_uri).await.unwrap();
 
     let mongo_clients = MongoClients {
@@ -347,6 +363,7 @@ async fn main() -> std::io::Result<()> {
             .service(load)
             .service(get_current_user)
             .service(get_my_fiddles)
+            .service(get_mongodb_versions)
             .service(Files::new("/", &static_file_dir).index_file("index.html"))
             .data(mongo_clients.clone())
             .default_service(
