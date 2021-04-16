@@ -5,7 +5,6 @@ import { LogoMark } from "@leafygreen-ui/logo";
 import { H2 } from "@leafygreen-ui/typography";
 import axios from "axios";
 
-import LoadDialog from "../LoadDialog";
 import VersionToggle from "../VersionToggle";
 import SavedFiddleToggle from "../SavedFiddleToggle";
 import ActionMenu, { ActionMenuItemProps } from "../ActionMenu";
@@ -26,7 +25,6 @@ interface NavbarProps {
 const setUpTriggers = (
 	isBlank: boolean,
 	onSave: Function,
-	onLoad: Function,
 	onReset: Function,
 	onLoadTemplate: Function
 ): Array<ActionMenuItemProps> => {
@@ -37,13 +35,6 @@ const setUpTriggers = (
 			description: "Save Current Fiddle",
 			label: "Save",
 			glyph: "Save",
-		},
-		{
-			disabled: false,
-			func: onLoad,
-			description: "Load Fiddle",
-			label: "Load",
-			glyph: "OpenNewTab",
 		},
 		{
 			disabled: isBlank,
@@ -93,8 +84,6 @@ const Navbar = ({
 	availableVersions,
 	canExecute,
 }: NavbarProps) => {
-	const [loadOpen, setLoadOpen] = useState<boolean>(false);
-	const [fiddleId, setFiddleId] = useState<string>("");
 	const [savedFiddles, setSavedFiddles] = useState<Array<string> | undefined>();
 	const [username, setUsername] = useState<string>("");
 	const history = useHistory();
@@ -108,23 +97,8 @@ const Navbar = ({
 		getMyFiddles().then(setSavedFiddles);
 	}, []);
 
-	const onLoad = () => {
-		if (fiddleId) {
-			history.push(fiddleId);
-			setFiddleId("");
-			setLoadOpen(false);
-		} else {
-			setLoadOpen(true);
-		}
-	};
-
 	const onSelectFiddle = (fiddleId: string) => {
 		history.push(fiddleId);
-	};
-
-	const onCancel = () => {
-		setLoadOpen(false);
-		setFiddleId("");
 	};
 
 	return (
@@ -149,7 +123,6 @@ const Navbar = ({
 						triggers={setUpTriggers(
 							isBlank,
 							onSave,
-							onLoad,
 							onReset,
 							onLoadTemplate
 						)}
@@ -164,13 +137,6 @@ const Navbar = ({
           </Button>
 				</div>
 			</div>
-			<LoadDialog
-				open={loadOpen}
-				fiddleId={fiddleId}
-				setFiddleId={setFiddleId}
-				onCancel={onCancel}
-				onLoad={onLoad}
-			/>
 		</>
 	);
 };
