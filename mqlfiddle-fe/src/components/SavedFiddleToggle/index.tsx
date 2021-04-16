@@ -1,16 +1,18 @@
 import React from "react";
-import { Option, Select, Size } from "@leafygreen-ui/select";
+import { Option, OptionGroup, Select, Size } from "@leafygreen-ui/select";
 
 import { useTheme } from "../../hooks/useTheme";
 
 interface SavedFiddleToggleProps {
 	fiddles: Array<string> | undefined;
 	onSelect: (fiddleId: string) => void;
+	currentFiddle: string | undefined;
 }
 
 const SavedFiddleToggle = ({
 	fiddles,
 	onSelect,
+	currentFiddle,
 }: SavedFiddleToggleProps) => {
 	const { dark } = useTheme();
 	return (
@@ -21,15 +23,19 @@ const SavedFiddleToggle = ({
 				placeholder={fiddles ? "Load Fiddle" : "Loading..."}
 				name="Saved Fiddle"
 				size={Size.Default}
-				value={undefined}
+				value={currentFiddle}
 				onChange={onSelect}
 				darkMode={dark}
 			>
-				{fiddles?.map(f => (
-					<Option key={`fiddle-option-${f}`} value={f}>
-						{f}
-					</Option>
-				))}
+				{fiddles && (
+					<OptionGroup label="My Saved Fiddles">
+						{fiddles.map(f => (
+							<Option key={`fiddle-option-saved-${f}`} value={f}>
+								{f}
+							</Option>
+						))}
+					</OptionGroup>
+				)}
 			</Select>
 		</div >
 	);

@@ -20,6 +20,7 @@ interface NavbarProps {
 	onVersionChange: (newVersion: string) => void;
 	availableVersions: Array<string> | undefined;
 	canExecute: boolean;
+	currentFiddleId: string | undefined;
 }
 
 const setUpTriggers = (
@@ -75,6 +76,7 @@ const Navbar = ({
 	onVersionChange,
 	availableVersions,
 	canExecute,
+	currentFiddleId,
 }: NavbarProps) => {
 	const [savedFiddles, setSavedFiddles] = useState<Array<string> | undefined>();
 	const [username, setUsername] = useState<string>("");
@@ -106,6 +108,7 @@ const Navbar = ({
 						availableVersions={availableVersions}
 					/>
 					<SavedFiddleToggle
+						currentFiddle={currentFiddleId}
 						fiddles={savedFiddles}
 						onSelect={onSelectFiddle}
 					/>

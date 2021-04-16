@@ -221,6 +221,7 @@ const Layout = () => {
 				version={version}
 				onVersionChange={onVersionChange}
 				availableVersions={availableVersions}
+				currentFiddleId={code}
 			/>
 			<div className="w-full flex flex-col content-container">
 				<div
