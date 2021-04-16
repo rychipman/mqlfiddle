@@ -8,10 +8,11 @@ import axios from "axios";
 import VersionToggle from "../VersionToggle";
 import SavedFiddleToggle from "../SavedFiddleToggle";
 import ActionMenu, { ActionMenuItemProps } from "../ActionMenu";
+import SaveFiddleModal from '../SaveFiddleModal';
 import { useTheme } from "../../hooks/useTheme";
 
 interface NavbarProps {
-	onSave: () => void;
+	onSave: (fiddleName: string) => void;
 	onExecute: () => void;
 	onReset: () => void;
 	onLoadTemplate: () => void;
@@ -21,6 +22,7 @@ interface NavbarProps {
 	availableVersions: Array<string> | undefined;
 	canExecute: boolean;
 	currentFiddleId: string | undefined;
+	currentFiddleName: string | undefined;
 }
 
 const setUpTriggers = (
@@ -77,9 +79,11 @@ const Navbar = ({
 	availableVersions,
 	canExecute,
 	currentFiddleId,
+	currentFiddleName,
 }: NavbarProps) => {
 	const [savedFiddles, setSavedFiddles] = useState<Array<string> | undefined>();
 	const [username, setUsername] = useState<string>("");
+	const [confirmSaveDialogOpen, setConfirmSaveDialogOpen] = useState<boolean>(false);
 	const history = useHistory();
 	const { dark } = useTheme();
 
@@ -94,6 +98,19 @@ const Navbar = ({
 	const onSelectFiddle = (fiddleId: string) => {
 		history.push(fiddleId);
 		getMyFiddles().then(setSavedFiddles);
+	};
+
+	const onBeginSave = () => {
+		setConfirmSaveDialogOpen(true);
+	};
+
+	const onConfirmSave = (fiddleName: string) => {
+		onSave(fiddleName);
+		setConfirmSaveDialogOpen(false);
+	};
+
+	const onCancelSave = () => {
+		setConfirmSaveDialogOpen(false);
 	};
 
 	return (
@@ -131,13 +148,19 @@ const Navbar = ({
 						Execute
 					</Button>
 					<Button
-						onClick={onSave}
+						onClick={onBeginSave}
 						disabled={isBlank || !canExecute}
 						darkMode={dark}
 					>
 						Save
 					</Button>
 				</div>
+				<SaveFiddleModal
+					open={confirmSaveDialogOpen}
+					onConfirm={onConfirmSave}
+					onCancel={onCancelSave}
+					defaultName={currentFiddleName}
+				/>
 			</div>
 		</>
 	);

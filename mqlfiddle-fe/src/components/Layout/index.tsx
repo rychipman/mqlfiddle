@@ -64,6 +64,7 @@ const Layout = () => {
 	const [version, setVersion] = useState<string | undefined>();
 	const [availableVersions, setAvailableVersions] = useState<Array<string> | undefined>();
 	const { code } = useParams<{ code?: string }>();
+	const [fiddleName, setFiddleName] = useState<string | undefined>();
 	const [querySyntax, setQuerySyntax] = useState<
 		QuerySyntaxOptionProps | undefined
 	>(QUERY_SYNTAX_OPTIONS[0]);
@@ -159,7 +160,7 @@ const Layout = () => {
 			});
 	};
 
-	const onSave = () => {
+	const onSave = (fiddleName: string) => {
 		saveFiddle({
 			schema: schema!,
 			query: mql!,
@@ -222,6 +223,7 @@ const Layout = () => {
 				onVersionChange={onVersionChange}
 				availableVersions={availableVersions}
 				currentFiddleId={code}
+				currentFiddleName={fiddleName}
 			/>
 			<div className="w-full flex flex-col content-container">
 				<div
