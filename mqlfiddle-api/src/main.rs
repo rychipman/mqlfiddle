@@ -329,27 +329,27 @@ async fn main() -> Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let three_six = match std::env::var("MDB_THREE_SIX") {
+    let three_six = match std::env::var("MDB_THREE_SIX_URI") {
         Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
-    let four_zero = match std::env::var("MDB_FOUR_ZERO") {
+    let four_zero = match std::env::var("MDB_FOUR_ZERO_URI") {
         Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
-    let four_two = match std::env::var("MDB_FOUR_TWO") {
+    let four_two = match std::env::var("MDB_FOUR_TWO_URI") {
         Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
-    let four_four = match std::env::var("MDB_FOUR_FOUR") {
+    let four_four = match std::env::var("MDB_FOUR_FOUR_URI") {
         Ok(uri) => Some(Client::with_uri_str(&uri).await?),
         Err(_) => None,
     };
 
-    let api_db_uri = std::env::var("MDB_API").unwrap_or("mongodb://localhost:27017".into());
+    let api_db_uri = std::env::var("MDB_API_URI").unwrap_or("mongodb://localhost:27017".into());
     let api_client = Client::with_uri_str(&api_db_uri).await?;
 
     let mongo_clients = MongoClients {
