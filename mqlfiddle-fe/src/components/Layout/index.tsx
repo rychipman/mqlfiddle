@@ -140,10 +140,16 @@ const Layout = () => {
 				setOutput({
 					results: JSON.parse(JSON.stringify(res.data.result)),
 					stats: censoredStats,
+					error: undefined,
 				});
 				addToast("success", "Fiddle Executed", "Trace through the output");
 			})
 			.catch((e) => {
+				setOutput({
+					results: undefined,
+					stats: undefined,
+					error: e.response.data,
+				});
 				console.error(JSON.stringify(e.response));
 				addToast(
 					"error",
@@ -245,7 +251,7 @@ const Layout = () => {
 						/>
 					</div>
 				</div>
-				<Output results={output?.results} stats={output?.stats} />
+				<Output error={output?.error} results={output?.results} stats={output?.stats} />
 			</div>
 			<ThemeToggle />
 		</div>
