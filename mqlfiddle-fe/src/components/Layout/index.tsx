@@ -48,6 +48,7 @@ const defaultSchema = JSON.stringify(
 );
 
 const defaultVersion = VERSIONS[VERSIONS.length - 1].value;
+const defaultValidStates = { schema: true, mql: true };
 
 const Layout = () => {
   const [schema, setSchema] = useState<string | undefined>(defaultSchema);
@@ -61,7 +62,7 @@ const Layout = () => {
     QuerySyntaxOptionProps | undefined
   >(QUERY_SYNTAX_OPTIONS[0]);
   const [dataValid, setDataValid] = useState<{ schema: boolean; mql: boolean }>(
-    { schema: true, mql: true }
+    defaultValidStates
   );
   const { addToast } = useToasts();
   const mqlEditorRef = useRef<any | undefined>();
@@ -79,7 +80,17 @@ const Layout = () => {
   }, [code]);
 
   const onExecute = () => {
-    const query = querySyntax!.conversions[QuerySyntaxEnum.COMMAND]!(mql!);
+    let query = "";
+    try {
+      query = querySyntax!.conversions[QuerySyntaxEnum.COMMAND]!(mql!);
+    } catch {
+      addToast(
+        "error",
+        "Execution Failed",
+        "Conversion to COMMAND did not work as expected (There might be some syntax errors that the editor didn't catch)"
+      );
+      return;
+    }
     executeFiddle({
       schema: JSON.parse(schema!),
       query: JSON.parse(query),
@@ -123,6 +134,7 @@ const Layout = () => {
   const onReset = () => {
     setMql(undefined);
     setSchema(undefined);
+    setDataValid(defaultValidStates);
     if (output !== undefined) setOutput(undefined);
     addToast("info", "Fiddle Reset", "Be Free!!");
   };
@@ -162,7 +174,14 @@ const Layout = () => {
           className={clsx("w-full flex flex-none", output ? "h-3/5" : "h-full")}
         >
           <div className="w-1/2 h-full py-1.5">
-            <SchemaEditor schema={schema} setSchema={setSchema} />
+            <SchemaEditor
+              schema={schema}
+              setSchema={setSchema}
+              schemaValid={dataValid!.schema}
+              setSchemaValid={(valid: boolean) =>
+                setDataValid((prev) => ({ ...prev, schema: valid }))
+              }
+            />
           </div>
           <div className="border-r border-gray-light dark:border-gray-dark h-full" />
           <div className="w-1/2 h-full py-1.5">

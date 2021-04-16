@@ -12,6 +12,7 @@ import isEmpty from "is-empty";
 import clsx from "clsx";
 
 import { useTheme } from "../../hooks/useTheme";
+import { useToasts } from "../../hooks/useToast";
 
 import { QuerySyntaxOptionProps, QUERY_SYNTAX_OPTIONS } from "../../constants";
 
@@ -44,6 +45,7 @@ const MQLEditor = forwardRef(
   ) => {
     const { dark } = useTheme();
     const editorRef = useRef<any>(null);
+    const { addToast } = useToasts();
 
     useImperativeHandle(ref, () => ({
       forceFormatDocument() {
@@ -54,12 +56,29 @@ const MQLEditor = forwardRef(
     }));
 
     const onSyntaxChange = (newSyntax: QuerySyntaxOptionProps) => {
-      setQuerySyntax(newSyntax);
+      if (!mqlValid || newSyntax!.value === querySyntax!.value) {
+        return;
+      }
       if (!isEmpty(mql)) {
-        setMql(querySyntax!.conversions[newSyntax.value]!(mql!));
+        let convertedSyntax = "";
+        try {
+          convertedSyntax = querySyntax!.conversions[newSyntax.value]!(mql!);
+        } catch {
+          addToast(
+            "error",
+            "Conversion Failed",
+            `Conversion to ${newSyntax.value} did not work as expected (There might be some syntax errors that the editor didn't catch)`
+          );
+          return;
+        }
+        setMql(convertedSyntax);
+        setQuerySyntax(newSyntax);
         setTimeout(() => {
           editorRef.current.getAction("editor.action.formatDocument").run();
         }, 100);
+      } else {
+        setMql(mql);
+        setQuerySyntax(newSyntax);
       }
     };
 
@@ -140,7 +159,8 @@ const MQLEditor = forwardRef(
                       "font-mono",
                       option!.value === querySyntax!.value
                         ? "font-bold text-primary"
-                        : "dark:text-white hover:cursor-pointer hover:text-opacity-80"
+                        : mqlValid &&
+                            "dark:text-white hover:cursor-pointer hover:text-opacity-80"
                     )}
                   >
                     {option.value}
