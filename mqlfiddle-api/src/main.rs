@@ -326,7 +326,8 @@ impl MongoClients {
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    std::env::set_var("RUST_LOG", "actix_web=info");
+    std::env::set_var("RUST_LOG", "actix_web=debug");
+    std::env::set_var("RUST_BACKTRACE", "1");
     env_logger::init();
 
     let three_six = match std::env::var("MDB_THREE_SIX_URI") {
