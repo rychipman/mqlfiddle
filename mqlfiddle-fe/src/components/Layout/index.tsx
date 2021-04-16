@@ -15,7 +15,7 @@ import Output, { OutputProps } from "../Output";
 import ThemeToggle from "../ThemeToggle";
 
 import "./style.css";
-import { useParams } from "react-router";
+import { useHistory, useParams } from "react-router";
 import clsx from "clsx";
 
 const executeFiddle = (data: any) =>
@@ -66,6 +66,7 @@ const Layout = () => {
   );
   const { addToast } = useToasts();
   const mqlEditorRef = useRef<any | undefined>();
+  const history = useHistory();
 
   useEffect(() => {
     if (code) {
@@ -75,7 +76,15 @@ const Layout = () => {
           setMql(data.query);
           setVersion(data.version);
         })
-        .catch((e) => console.error(e));
+        .catch((e) => {
+          console.error(e);
+          addToast(
+            "error",
+            "Failed to load fiddle",
+            `Check console log for specific error`
+          );
+          history.push("/");
+        });
     }
   }, [code]);
 
@@ -110,7 +119,14 @@ const Layout = () => {
         });
         addToast("success", "Fiddle Executed", "Trace through the output");
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.error(e);
+        addToast(
+          "error",
+          "Execution Failed",
+          `Check console log for specific error`
+        );
+      });
   };
 
   const onSave = () => {
@@ -128,7 +144,14 @@ const Layout = () => {
           "Unique URL has been copied to clipboard"
         );
       })
-      .catch((e) => console.error(e));
+      .catch((e) => {
+        console.error(e);
+        addToast(
+          "error",
+          "Save Failed",
+          `Check console log for specific error`
+        );
+      });
   };
 
   const onReset = () => {
