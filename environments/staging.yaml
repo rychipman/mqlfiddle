@@ -1,6 +1,5 @@
 envSecrets:
   MDB_API_URI: mqlfiddle-secrets
-  MDB_THREE_SIX: mqlfiddle-secrets
   MDB_FOUR_ZERO: mqlfiddle-secrets
   MDB_FOUR_TWO: mqlfiddle-secrets
   MDB_FOUR_FOUR: mqlfiddle-secrets
